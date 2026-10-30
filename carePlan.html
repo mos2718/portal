@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>癌症病人在宅照護計畫與預立醫囑系統</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Font (Inter & Noto Sans TC) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #f8fafc;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            body {
+                background-color: white;
+                color: black;
+            }
+            .card-shadow {
+                box-shadow: none !important;
+                border: 1px solid #e2e8f0;
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-teal-800 text-white shadow-md sticky top-0 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-teal-600 p-2 rounded-lg text-white">
+                        <i data-lucide="activity" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold leading-tight">癌症病人在宅照護計畫 (Home Palliative Care Plan)</h1>
+                        <p class="text-xs text-teal-200">主治醫師釋出預立醫囑管理系統</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span class="hidden md:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                        <span class="w-2 h-2 mr-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                        照護計畫生效中 (Active)
+                    </span>
+                    <button onclick="window.print()" class="bg-teal-700 hover:bg-teal-600 text-white text-xs font-medium py-2 px-3 rounded-lg border border-teal-500 transition flex items-center gap-1.5 shadow-sm">
+                        <i data-lucide="printer" class="w-4 h-4"></i>
+                        <span>列印/匯出PDF</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Patient & Care Team Quick Info Banner -->
+    <section class="bg-white border-b border-slate-200 shadow-sm py-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                <!-- Patient Info -->
+                <div class="flex items-center space-x-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div class="p-2.5 bg-teal-100 text-teal-800 rounded-full">
+                        <i data-lucide="user" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-500 font-medium">個案姓名 / 病歷號</div>
+                        <div class="font-bold text-slate-800 text-base">陳大明 <span class="text-xs text-slate-500 font-normal">(68歲, 男)</span></div>
+                        <div class="text-xs text-teal-700 font-medium">病歷號: P-9823411</div>
+                    </div>
+                </div>
+
+                <!-- Diagnosis -->
+                <div class="flex items-center space-x-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div class="p-2.5 bg-rose-100 text-rose-800 rounded-full">
+                        <i data-lucide="file-text" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-500 font-medium">主要診斷 (Diagnosis)</div>
+                        <div class="font-bold text-slate-800">肺腺癌第四期 (Stage IV)</div>
+                        <div class="text-xs text-slate-500">多處骨轉移、慢性阻塞性肺疾</div>
+                    </div>
+                </div>
+
+                <!-- Primary Physician -->
+                <div class="flex items-center space-x-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div class="p-2.5 bg-blue-100 text-blue-800 rounded-full">
+                        <i data-lucide="stethoscope" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-500 font-medium">釋出醫囑主治醫師</div>
+                        <div class="font-bold text-slate-800">張建國 醫師</div>
+                        <div class="text-xs text-slate-500">醫學中心 腫瘤安寧科</div>
+                    </div>
+                </div>
+
+                <!-- Home Care Team Contact -->
+                <div class="flex items-center space-x-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div class="p-2.5 bg-amber-100 text-amber-800 rounded-full">
+                        <i data-lucide="phone-call" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-500 font-medium">居家照護專線 (24Hr)</div>
+                        <div class="font-bold text-amber-700">0800-888-995</div>
+                        <div class="text-xs text-slate-500">負責護理師: 林靜宜 RN</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+        
+        <!-- Red Flag Alert Notification Banner -->
+        <div class="mb-6 bg-gradient-to-r from-rose-50 to-orange-50 border-l-4 border-rose-500 p-4 rounded-r-xl shadow-sm">
+            <div class="flex items-start justify-between">
+                <div class="flex items-start space-x-3">
+                    <div class="p-1 bg-rose-500 text-white rounded-full mt-0.5">
+                        <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-rose-900">緊急轉介與送醫機制 (Red Flag Escalation Protocol)</h3>
+                        <p class="text-xs text-rose-700 mt-0.5">若出現以下任一症狀，請先執行緊急預立處置，並立即聯繫居家團隊或啟動綠色通道轉介急診：</p>
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            <span class="inline-flex items-center px-2 py-1 rounded bg-white text-rose-800 text-xs border border-rose-200 font-medium">
+                                • 突發性嚴重呼吸困難 (SPO2 &lt; 85%)
+                            </span>
+                            <span class="inline-flex items-center px-2 py-1 rounded bg-white text-rose-800 text-xs border border-rose-200 font-medium">
+                                • 爆發性劇痛 (VAS ≥ 8分) 服藥30分無效
+                            </span>
+                            <span class="inline-flex items-center px-2 py-1 rounded bg-white text-rose-800 text-xs border border-rose-200 font-medium">
+                                • 意識不清/急性譫妄伴隨攻擊行為
+                            </span>
+                            <span class="inline-flex items-center px-2 py-1 rounded bg-white text-rose-800 text-xs border border-rose-200 font-medium">
+                                • 大量出血或管路脫落無法重置
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Bar: Filter, Tabs & Search -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6 no-print">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                
+                <!-- Tab Buttons -->
+                <div class="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-lg">
+                    <button onclick="switchTab('all')" id="tab-all" class="tab-btn px-3 py-1.5 text-xs font-semibold rounded-md bg-white text-teal-800 shadow-sm transition">
+                        全部預立醫囑
+                    </button>
+                    <button onclick="switchTab('meds')" id="tab-meds" class="tab-btn px-3 py-1.5 text-xs font-medium rounded-md text-slate-600 hover:text-slate-900 transition flex items-center gap-1">
+                        <i data-lucide="pill" class="w-3.5 h-3.5"></i> 預立藥物醫囑 (PRN)
+                    </button>
+                    <button onclick="switchTab('care')" id="tab-care" class="tab-btn px-3 py-1.5 text-xs font-medium rounded-md text-slate-600 hover:text-slate-900 transition flex items-center gap-1">
+                        <i data-lucide="heart-pulse" class="w-3.5 h-3.5"></i> 護理與處置醫囑
+                    </button>
+                    <button onclick="switchTab('pump')" id="tab-pump" class="tab-btn px-3 py-1.5 text-xs font-medium rounded-md text-slate-600 hover:text-slate-900 transition flex items-center gap-1">
+                        <i data-lucide="syringe" class="w-3.5 h-3.5"></i> 皮下/CADD輸液計畫
+                    </button>
+                </div>
+
+                <!-- Search & Filters -->
+                <div class="flex items-center gap-2">
+                    <div class="relative flex-1 md:w-64">
+                        <input type="text" id="searchInput" onkeyup="filterOrders()" placeholder="搜尋醫囑關鍵字、藥名..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-2.5 top-2"></i>
+                    </div>
+                    <label class="inline-flex items-center text-xs text-slate-600 cursor-pointer select-none">
+                        <input type="checkbox" id="showPendingOnly" onchange="filterOrders()" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500 h-4 w-4">
+                        <span class="ml-1.5">僅顯示居家護理師未核對項目</span>
+                    </label>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Standing Orders Grid / Container -->
+        <div id="ordersContainer" class="space-y-6">
+
+            <!-- SECTION 1: 預立止痛與突破痛藥囑 (Analgesics / Breakthrough Pain) -->
+            <div class="order-card category-meds bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden transition-all duration-200 hover:shadow-md">
+                <div class="bg-amber-50 border-b border-amber-100 px-5 py-3 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <div class="p-1.5 bg-amber-500 text-white rounded-md">
+                            <i data-lucide="zap" class="w-4 h-4"></i>
+                        </div>
+                        <h2 class="font-bold text-amber-900 text-sm md:text-base">1. 突破性疼痛預立藥囑 (Breakthrough Pain Management)</h2>
+                    </div>
+                    <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-800">主治醫師授權 PRN 藥囑</span>
+                </div>
+                
+                <div class="p-5 divide-y divide-slate-100">
+                    
+                    <!-- Item 1.1 -->
+                    <div class="py-3 first:pt-0 last:pb-0 order-item" data-keywords="morphine 莫飛 口服液 突破痛 止痛">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start space-x-3">
+                                <input type="checkbox" class="order-check mt-1 rounded border-slate-300 text-teal-600 focus:ring-teal-500 h-4 w-4" onchange="updateProgress()">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-slate-800 text-sm">Morphine Oral Solution (莫飛口服液 10mg/mL)</span>
+                                        <span class="bg-rose-100 text-rose-700 text-xs px-2 py-0.5 rounded font-medium">管制藥品</span>
+                                    </div>
+                                    <div class="mt-1 text-xs text-slate-600 space-y-1">
+                                        <p><span class="font-semibold text-slate-700">用法用量：</span>當突發性疼痛 VAS ≥ 4分時，口服 5mg~10mg (0.5~1.0 mL) PRN。</p>
+                                        <p><span class="font-semibold text-slate-700">給藥間隔：</span>每次間隔至少 1 Hour，24小時內不超過 6 次。</p>
+                                        <p><span class="font-semibold text-slate-700">觀察重點：</span>服藥後 30 分鐘評估疼痛分數及呼吸速率 (若 RR &lt; 10次/分暫緩並通報)。</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded font-mono">核准期限: 2026/12/31</span>
+                        </div>
+                    </div>
+
+                    <!-- Item 1.2 -->
+                    <div class="py-3 first:pt-0 last:pb-0 order-item" data-keywords="fentanyl 貼片 止痛 慢性痛 貼劑">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start space-x-3">
+                                <input type="checkbox" class="order-check mt-1 rounded border-slate-300 text-teal-600 focus:ring-teal-500 h-4 w-4" onchange="updateProgress()">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-slate-800 text-sm">Fentanyl Transdermal Patch (芬太尼貼片 25 mcg/hr)</span>
+                                        <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded font-medium">持續性控制</span>
+                                    </div>
+                                    <div class="mt-1 text-xs text-slate-600 space-y-1">
+                                        <p><span class="font-semibold text-slate-700">用法用量：</span>每 72 小時替換一片，黏貼於乾淨無毛髮平整皮膚（如胸前、背部）。</p>
+                                        <p><span class="font-semibold text-slate-700">撕下撕上指導：</span>舊貼片對摺包覆後依管制藥品廢棄規定回收，禁止切割貼片。</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded font-mono">常規醫囑</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- SECTION 2: 症狀控制預立藥囑 (Symptom Control: Nausea, Laxative, Delirium, Secretion) -->
+            <div class="order-card category-meds bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden transition-all duration-200 hover:shadow-md">
+                <div class="bg-blue-50 border-b border-blue-100 px-5 py-3 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <div class="p-1.5 bg-blue-600 text-white rounded-md">
+                            <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                        </div>
+                        <h2 class="font-bold text-blue-900 text-sm md:text-base">2. 常見症狀控制預立藥囑 (Symptom Management Standing Orders)</h2>
+                    </div>
+                    <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-200 text-blue-800">主治醫師授權 PRN 藥囑</span>
+                </div>
+
+                <div class="p-5 divide-y divide-slate-100">
+
+                    <!-- Anti-emetic -->
+                    <div class="py-3 first:pt-0 last:pb-0 order-item" data-keywords="metoclopramide 嘔吐 止吐 腸胃蠕動 Primperan">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start space-x-3">
+                                <input type="checkbox" class="order-check mt-1 rounded border-slate-300 text-teal-600 focus:ring-teal-500 h-4 w-4" onchange="updateProgress()">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-slate-800 text-sm">Metoclopramide (Primperan) 10mg / Tab</span>
+                                        <span class="bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded">噁心嘔吐</span>
+                                    </div>
+                                    <div class="mt-1 text-xs text-slate-600 space-y-1">
+                                        <p><span class="font-semibold text-slate-700">指示：</span>噁心、嘔吐或腹脹時，口服 1 錠 (10mg) PRN，每日最多 3 次 (TID ac)。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Laxative -->
+                    <div class="py-3 first:pt-0 last:pb-0 order-item" data-keywords="senna 軟便 便秘 鴉片類副作用 Sennoside">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start space-x-3">
+                                <input type="checkbox" class="order-check mt-1 rounded border-slate-300 text-teal-600 focus:ring-teal-500 h-4 w-4" onchange="updateProgress()">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-slate-800 text-sm">Sennoside (番瀉葉錠) 20mg / Tab</span>
+                                        <span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded">便秘預防/處置</span>
+                                    </div>
+                                    <div class="mt-1 text-xs text-slate-600 space-y-1">
+                                        <p><span class="font-semibold text-slate-700">指示：</span>若超過 2 天未排便，睡前口服 1-2 錠；若持續未排便，可輔以 Dulcolax 塞劑 1 顆。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delirium / Sedation -->
+                    <div class="py-3 first:pt-0 last:pb-0 order-item" data-keywords="haloperidol 譫妄 瞻妄 譫妄安寧 躁動 Haldol">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start space-x-3">
+                                <input type="checkbox" class="order-check mt-1 rounded border-slate-300 text-teal-600 focus:ring-teal-500 h-4 w-4" onchange="updateProgress()">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-slate-800 text-sm">Haloperidol (Haldol) 0.5mg / Oral Solution or Drops</span>
+                                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-0.5 rounded">急性譫妄/躁動</span>
+                                    </div>
+                                    <div class="mt-1 text-xs text-slate-600 space-y-1">
+                                        <p><span class="font-semibold text-slate-700">指示：</span>出現幻覺、嚴重譫妄躁動或夜間日夜顛倒混亂時，口服 0.5mg~1mg PRN，每 4 小時可重複，需觀察錐體外症候群 (EPS)。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Secretion / Death Rattle -->
+                    <div class="py-3 first:pt-0 last:pb-0 order-item" data-keywords="hyoscine atropine 臨終嘎嘎聲 呼吸道分泌物 抽痰">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start space-x-3">
+                                <input type="checkbox" class="order-check mt-1 rounded border-slate-300 text-teal-600 focus:ring-teal-500 h-4 w-4" onchange="updateProgress()">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-slate-800 text-sm">Hyoscine Hydrobromide (Scopolamine) / Atropine Drops</span>
+                                        <span class="bg-indigo-100 text-indigo-800 text-xs px-2 py-0.5 rounded">呼吸道分泌物抑制</span>
+                                    </div>
+                                    <div class="mt-1 text-xs text-slate-600 space-y-1">
+                                        <p><span class="font-semibold text-slate-700">指示：</span>臨終階段出現喉頭音 (Death Rattle) 或分泌物過多時，1% Atropine眼藥水 1-2 滴舌下給藥 Q4H PRN。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- SECTION 3: 護理與非藥物處置預立醫囑 (Nursing & Non-Pharmacological Interventions) -->
+            <div class="order-card category-care bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden transition-all duration-200 hover:shadow-md">
+                <div class="bg-emerald-50 border-b border-emerald-100 px-5 py-3 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <div class="p-1.5 bg-emerald-600 text-white rounded-md">
+                            <i data-lucide="heart-handshake" class="w-4 h-4"></i>
+                        </div>
+                        <h2 class="font-bold text-emerald-900 text-sm md:text-base">3. 護理與非藥物處置預立醫囑 (Nursing Interventions & Protocol)</h2>
+                    </div>
+                    <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-200 text-emerald-800">居家護理執行授權</span>
+                </div>
+
+                <div class="p-5 divide-y divide-slate-100">
+
+                    <!-- Oxygen Therapy -->
+                    <div class="py-3 first:pt-0 last:pb-0 order-item" data-keywords="氧氣 呼吸困難 spo2 鼻導管 oxygen">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start space-x-3">
+                                <input type="checkbox" class="order-check mt-1 rounded border-slate-300 text-teal-600 focus:ring-teal-500 h-4 w-4" onchange="updateProgress()">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-slate-800 text-sm">氧氣治療協定 (Oxygen Therapy Protocol)</span>
+                                        <span class="bg-teal-100 text-teal-800 text-xs px-2 py-0.5 rounded">呼吸照護</span>
+                                    </div>
+                                    <div class="mt-1 text-xs text-slate-600 space-y-1">
+                                        <p><span class="font-semibold text-slate-700">目標血氧：</span>保持 SpO2 ≥ 90%。</p>
+                                        <p><span class="font-semibold text-slate-700">執行條件：</span>當患者自訴胸悶、氣喘或 SpO2 &lt; 90% 時，開啟鼻導管氧氣 1-3 L/min。若氣喘持續，可搭配 Morphine 2.5mg-5mg PO 舒緩喘感。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tube Management -->
+                    <div class="py-3 first:pt-0 last:pb-0 order-item" data-keywords="管路 鼻胃管 尿管 Port-a Foley NG tube 換管">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start space-x-3">
+                                <input type="checkbox" class="order-check mt-1 rounded border-slate-300 text-teal-600 focus:ring-teal-500 h-4 w-4" onchange="updateProgress()">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-slate-800 text-sm">居家管路維護與定期更換醫囑 (Tubes Management)</span>
+                                        <span class="bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded">侵入性管路</span>
+                                    </div>
+                                    <div class="mt-1 text-xs text-slate-600 space-y-1">
+                                        <p><span class="font-semibold text-slate-700">矽膠鼻胃管 (NG Tube)：</span>每 30 天更換乙次 (或阻塞滑脫時即時重新置入)。</p>
+                                        <p><span class="font-semibold text-slate-700">矽膠留置尿管 (Foley Catheter)：</span>每 30 天更換乙次，每日執行尿道口清潔。</p>
+                                        <p><span class="font-semibold text-slate-700">Port-A 植入式靜脈導管：</span>每 7 天更換 Huber 彎針及無菌敷料，使用 Heparin 沖洗沖管。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Wound Care -->
+                    <div class="py-3 first:pt-0 last:pb-0 order-item" data-keywords="壓瘡 傷口 褥瘡 敷料 wound">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start space-x-3">
+                                <input type="checkbox" class="order-check mt-1 rounded border-slate-300 text-teal-600 focus:ring-teal-500 h-4 w-4" onchange="updateProgress()">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-slate-800 text-sm">壓瘡與癌性傷口換藥指南 (Wound Care Protocol)</span>
+                                        <span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded">傷口照護</span>
+                                    </div>
+                                    <div class="mt-1 text-xs text-slate-600 space-y-1">
+                                        <p><span class="font-semibold text-slate-700">骶骨二級壓瘡：</span>生理食鹽水清洗後，使用水膠體敷料 (Hydrocolloid) 覆蓋，每 3-5 天或滲液飽和時更換。</p>
+                                        <p><span class="font-semibold text-slate-700">癌性潰瘍傷口 (惡臭/出血風險)：</span>使用 Metronidazole 碎錠或軟膏敷蓋抑菌去味；若有微血管滲血，使用凝血纖維綿敷蓋。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- SECTION 4: 皮下注射與 CADD 幫浦照護計畫 (Subcutaneous & CADD Infusion Pump) -->
+            <div class="order-card category-pump bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden transition-all duration-200 hover:shadow-md">
+                <div class="bg-purple-50 border-b border-purple-100 px-5 py-3 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <div class="p-1.5 bg-purple-600 text-white rounded-md">
+                            <i data-lucide="syringe" class="w-4 h-4"></i>
+                        </div>
+                        <h2 class="font-bold text-purple-900 text-sm md:text-base">4. 持續性皮下輸液/CADD幫浦預立計畫 (Continuous Subcutaneous Infusion)</h2>
+                    </div>
+                    <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-200 text-purple-800">高階止痛處置</span>
+                </div>
+
+                <div class="p-5 divide-y divide-slate-100">
+
+                    <!-- CADD Pump Setting -->
+                    <div class="py-3 first:pt-0 last:pb-0 order-item" data-keywords="cadd 幫浦 皮下注射 止痛泵 morphine PCA">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start space-x-3">
+                                <input type="checkbox" class="order-check mt-1 rounded border-slate-300 text-teal-600 focus:ring-teal-500 h-4 w-4" onchange="updateProgress()">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-slate-800 text-sm">CADD-Solis 微電腦止痛幫浦參數醫囑</span>
+                                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-0.5 rounded font-mono">SC Infusion</span>
+                                    </div>
+                                    <div class="mt-1 text-xs text-slate-600 space-y-1">
+                                        <p><span class="font-semibold text-slate-700">藥品調配：</span>Morphine 100mg + Normal Saline 總體積 100mL。</p>
+                                        <p><span class="font-semibold text-slate-700">背景持續劑量 (Basal Rate)：</span>1.5 mL/hr (1.5 mg/hr)。</p>
+                                        <p><span class="font-semibold text-slate-700">病人自控按壓 (PCA Bolus)：</span>每次 1.0 mL (1.0 mg)，鎖定時間 (Lockout interval): 15 分鐘。</p>
+                                        <p><span class="font-semibold text-slate-700">皮下留置針 (Butterfly needle)：</span>每 7 天重新更換皮下注射部位 (優先選擇腹部或上臂外側)。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Execution Sign-off & Audit Trail Bar -->
+        <div class="mt-8 bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 rounded-full bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700 font-bold text-lg" id="progressPercent">
+                    0%
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-slate-800">居家護理師訪視核對進度</h4>
+                    <p class="text-xs text-slate-500" id="progressText">已核對 0 / 8 項預立醫囑條款</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 no-print">
+                <button onclick="resetChecks()" class="text-xs text-slate-500 hover:text-slate-800 underline">
+                    重置核對狀態
+                </button>
+                <button onclick="signOff()" class="bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold py-2.5 px-4 rounded-lg shadow transition flex items-center gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                    <span>護理師簽章並存檔 (Sign-off)</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Print-only Signature Footer -->
+        <div class="hidden print-only mt-12 pt-6 border-t border-slate-300">
+            <div class="grid grid-cols-3 gap-6 text-xs text-slate-700">
+                <div>
+                    <p class="font-bold">主治醫師簽章：</p>
+                    <div class="h-12 border-b border-dashed border-slate-400 mt-2"></div>
+                    <p class="mt-1 text-slate-500">日期：2026 年 ___ 月 ___ 日</p>
+                </div>
+                <div>
+                    <p class="font-bold">居家護理師簽章：</p>
+                    <div class="h-12 border-b border-dashed border-slate-400 mt-2"></div>
+                    <p class="mt-1 text-slate-500">日期：2026 年 ___ 月 ___ 日</p>
+                </div>
+                <div>
+                    <p class="font-bold">家屬/病患確認簽章：</p>
+                    <div class="h-12 border-b border-dashed border-slate-400 mt-2"></div>
+                    <p class="mt-1 text-slate-500">日期：2026 年 ___ 月 ___ 日</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-100 border-t border-slate-200 py-4 text-center text-xs text-slate-500 no-print">
+        <p>癌症病人在宅照護計畫 (In-Home Palliative Care Plan) 範本系統 • 依據全民健保在宅急症照護/安寧居家照護規範製作</p>
+    </footer>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white text-xs px-4 py-3 rounded-lg shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 flex items-center gap-2 z-50">
+        <i data-lucide="info" class="w-4 h-4 text-teal-400"></i>
+        <span id="toastMessage">訊息通知</span>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Switch Active Tabs
+        function switchTab(category) {
+            // Update Tab Buttons UI
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'text-teal-800', 'shadow-sm');
+                btn.classList.add('text-slate-600');
+            });
+            
+            const activeBtn = document.getElementById(`tab-${category}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-white', 'text-teal-800', 'shadow-sm');
+                activeBtn.classList.remove('text-slate-600');
+            }
+
+            // Filter Cards
+            const cards = document.querySelectorAll('.order-card');
+            cards.forEach(card => {
+                if (category === 'all') {
+                    card.style.display = 'block';
+                } else {
+                    if (card.classList.contains(`category-${category}`)) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        // Search & Pending Filter Logic
+        function filterOrders() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const showPendingOnly = document.getElementById('showPendingOnly').checked;
+            const items = document.querySelectorAll('.order-item');
+
+            items.forEach(item => {
+                const keywords = item.getAttribute('data-keywords') || '';
+                const text = item.innerText.toLowerCase();
+                const checkbox = item.querySelector('.order-check');
+                
+                const matchesSearch = text.includes(query) || keywords.includes(query);
+                const matchesPending = showPendingOnly ? !checkbox.checked : true;
+
+                if (matchesSearch && matchesPending) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // Update Progress Checklist Count
+        function updateProgress() {
+            const checkboxes = document.querySelectorAll('.order-check');
+            const total = checkboxes.length;
+            let checkedCount = 0;
+
+            checkboxes.forEach(cb => {
+                if (cb.checked) checkedCount++;
+            });
+
+            const percent = total > 0 ? Math.round((checkedCount / total) * 100) : 0;
+            
+            document.getElementById('progressPercent').innerText = `${percent}%`;
+            document.getElementById('progressText').innerText = `已核對 ${checkedCount} / ${total} 項預立醫囑條款`;
+        }
+
+        // Reset Checks
+        function resetChecks() {
+            document.querySelectorAll('.order-check').forEach(cb => cb.checked = false);
+            updateProgress();
+            showToast('已重置所有核對狀態');
+        }
+
+        // Sign-off Action
+        function signOff() {
+            showToast('已完成居家照護預立醫囑簽章與核對作業！');
+        }
+
+        // Helper Toast Function
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            toastMsg.innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        // Initial Progress Call
+        updateProgress();
+    </script>
+</body>
+</html>

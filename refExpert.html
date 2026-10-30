@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>癌症疼痛專科轉介診治與多模態 EMR/PHR 整合系統</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js for Labs and Pain Trend -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .dicom-viewport {
+            background-color: #000;
+            background-image: radial-gradient(circle at center, #1e293b 0%, #000 80%);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; color: black; }
+            .print-border { border: 1px solid #cbd5e1 !important; color: black !important; background: white !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col custom-scrollbar">
+
+    <!-- Top Clinical Header Navigation -->
+    <header class="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-50 no-print">
+        <div class="max-w-[1600px] mx-auto px-4 sm:px-6">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-rose-600 p-2 rounded-xl text-white shadow-lg shadow-rose-900/30">
+                        <i data-lucide="crosshair" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-base sm:text-lg font-bold tracking-tight">癌症疼痛專科轉介會診與多模態決策系統</h1>
+                            <span class="bg-rose-950/80 text-rose-400 border border-rose-800/80 text-[10px] font-bold px-2 py-0.5 rounded">Pain Specialist Portal</span>
+                        </div>
+                        <p class="text-xs text-slate-400">EMR 醫院臨床病歷 + PHR 在宅健康數據 跨機構整合平台</p>
+                    </div>
+                </div>
+
+                <!-- Right Actions -->
+                <div class="flex items-center space-x-3">
+                    <div class="hidden md:flex items-center gap-2 text-xs bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
+                        <i data-lucide="user-check" class="w-4 h-4 text-emerald-400"></i>
+                        <span>專科會診醫師：<strong class="text-slate-200">林浩然 醫師 (疼痛科/安寧神經痛專長)</strong></span>
+                    </div>
+                    <button onclick="switchTab('suite')" class="bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold py-2 px-3.5 rounded-lg transition flex items-center gap-1.5 shadow-md shadow-teal-900/20">
+                        <i data-lucide="calculator" class="w-4 h-4"></i>
+                        <span>鴉片轉換與微創評估</span>
+                    </button>
+                    <button onclick="generateSoapReport()" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold py-2 px-3.5 rounded-lg transition flex items-center gap-1.5 shadow-md shadow-rose-900/20">
+                        <i data-lucide="file-signature" class="w-4 h-4"></i>
+                        <span>生成專科回覆單 (SOAP)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Patient Referral Summary & High-Risk Alert Banner -->
+    <section class="bg-slate-900/90 border-b border-slate-800 py-4 shadow-inner">
+        <div class="max-w-[1600px] mx-auto px-4 sm:px-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                
+                <!-- Patient Info Card (5 cols) -->
+                <div class="lg:col-span-5 bg-slate-800/80 rounded-xl p-4 border border-slate-700 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h2 class="text-lg font-bold text-white">張國榮 先生</h2>
+                                    <span class="text-xs text-slate-400">62歲 | 男 | 病歷號：EMR-9948201</span>
+                                </div>
+                                <div class="text-xs font-bold text-rose-400 mt-1 flex items-center gap-1">
+                                    <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+                                    主要轉介診斷：胰臟癌第四期伴隨 T12-L2 脊椎骨轉移及腹腔神經叢浸潤
+                                </div>
+                            </div>
+                            <span class="px-2.5 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold rounded-lg">
+                                在宅急症轉介
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 text-xs mt-3 text-slate-300">
+                            <div><span class="text-slate-500">轉介原主治醫師：</span>張建國 (腫瘤科)</div>
+                            <div><span class="text-slate-500">主責社區護理：</span>林靜宜 RN (台北護理網)</div>
+                            <div><span class="text-slate-500">目前 ECOG 分級：</span>3 分 (極重度失能臥床)</div>
+                            <div><span class="text-slate-500">轉介主要訴求：</span><strong class="text-rose-300">頑固性突破痛 (VAS 8-9)</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dynamic High-Risk Warnings (7 cols) -->
+                <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    
+                    <!-- Alert 1: Renal Impairment -->
+                    <div class="bg-rose-950/40 border border-rose-800/60 rounded-xl p-3 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between text-rose-400 font-bold text-xs">
+                                <span class="flex items-center gap-1">
+                                    <i data-lucide="shield-alert" class="w-4 h-4"></i> 重度腎功能不全
+                                </span>
+                                <span class="bg-rose-600 text-white text-[10px] px-1.5 py-0.5 rounded">High Risk</span>
+                            </div>
+                            <div class="text-lg font-bold text-slate-100 mt-1">eGFR 24.5 <span class="text-xs font-normal text-slate-400">mL/min</span></div>
+                            <p class="text-[11px] text-rose-300 mt-1">Morphine M3G/M6G 代謝物蓄積風險！建議調整為 Hydromorphone 或 Fentanyl。</p>
+                        </div>
+                    </div>
+
+                    <!-- Alert 2: Spinal Compression Warning -->
+                    <div class="bg-amber-950/40 border border-amber-800/60 rounded-xl p-3 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between text-amber-400 font-bold text-xs">
+                                <span class="flex items-center gap-1">
+                                    <i data-lucide="bone" class="w-4 h-4"></i> 脊髓壓迫高危險群
+                                </span>
+                                <span class="bg-amber-600 text-white text-[10px] px-1.5 py-0.5 rounded">Warning</span>
+                            </div>
+                            <div class="text-sm font-bold text-slate-100 mt-1">T12 椎體病理性骨折</div>
+                            <p class="text-[11px] text-amber-300 mt-1">下肢神經根觸痛加劇。需評估神經阻斷術或急診減壓放療 (SBRT)。</p>
+                        </div>
+                    </div>
+
+                    <!-- Alert 3: Pharmacogenomic status -->
+                    <div class="bg-purple-950/40 border border-purple-800/60 rounded-xl p-3 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between text-purple-400 font-bold text-xs">
+                                <span class="flex items-center gap-1">
+                                    <i data-lucide="dna" class="w-4 h-4"></i> 藥物基因代謝位點
+                                </span>
+                                <span class="bg-purple-600 text-white text-[10px] px-1.5 py-0.5 rounded">Genomics</span>
+                            </div>
+                            <div class="text-sm font-bold text-slate-100 mt-1">CYP2D6 慢代謝型 (PM)</div>
+                            <p class="text-[11px] text-purple-300 mt-1">Codeine / Tramadol 無法有效轉化為活性代謝物，鎮痛效果極差。</p>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Main Workspace Container -->
+    <main class="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 flex-grow w-full">
+
+        <!-- Navigation Tabs for Specialist -->
+        <div class="bg-slate-900 p-1.5 rounded-xl border border-slate-800 mb-6 flex flex-wrap gap-2 no-print">
+            <button onclick="switchTab('emr-phr')" id="tab-emr-phr" class="tab-btn active-tab px-4 py-2 text-xs font-bold rounded-lg bg-teal-600 text-white shadow-sm flex items-center gap-2 transition">
+                <i data-lucide="layers" class="w-4 h-4"></i> 多模態 EMR (臨床) × PHR (在宅) 數據整合視圖
+            </button>
+            <button onclick="switchTab('dicom')" id="tab-dicom" class="tab-btn px-4 py-2 text-xs font-medium rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 flex items-center gap-2 transition">
+                <i data-lucide="image" class="w-4 h-4 text-cyan-400"></i> 影像與病理檢視器 (MRI / PET-CT)
+            </button>
+            <button onclick="switchTab('suite')" id="tab-suite" class="tab-btn px-4 py-2 text-xs font-medium rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 flex items-center gap-2 transition">
+                <i data-lucide="sliders" class="w-4 h-4 text-rose-400"></i> 專科鴉片劑量滴定與微創處置試算
+            </button>
+            <button onclick="switchTab('soap')" id="tab-soap" class="tab-btn px-4 py-2 text-xs font-medium rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 flex items-center gap-2 transition">
+                <i data-lucide="file-text" class="w-4 h-4 text-amber-400"></i> 專科會診報告 (SOAP Counter-Report)
+            </button>
+        </div>
+
+        <!-- SECTION 1: UNIFIED MULTI-MODAL EMR & PHR VIEW -->
+        <div id="content-emr-phr" class="tab-content space-y-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- LEFT COLUMN: EMR Hospital Data (6 cols) -->
+                <div class="lg:col-span-6 space-y-6">
+                    
+                    <div class="bg-slate-900 rounded-xl border border-slate-800 p-5 shadow-sm">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                            <div class="flex items-center space-x-2">
+                                <div class="p-1.5 bg-blue-600/20 text-blue-400 rounded-lg">
+                                    <i data-lucide="building-2" class="w-4 h-4"></i>
+                                </div>
+                                <h3 class="font-bold text-sm text-white">EMR 醫院端臨床數據整合 (Clinical Data)</h3>
+                            </div>
+                            <span class="text-[11px] text-slate-400">來源：醫學中心 PACS / HIS 連線</span>
+                        </div>
+
+                        <!-- Labs & Organ Functions Trend Chart -->
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-xs font-bold text-slate-300">肝腎功能關鍵指標歷程 (eGFR & Creatinine & ALT)</h4>
+                                <span class="text-[10px] text-rose-400 font-medium">⚠️ 警示：eGFR 近月下降 40%</span>
+                            </div>
+                            <div class="h-44 bg-slate-950 p-2 rounded-xl border border-slate-800">
+                                <canvas id="emrLabsChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Genomic & Biomarker Panel Table -->
+                        <div class="mt-5 space-y-2">
+                            <h4 class="text-xs font-bold text-slate-300">藥物基因與標靶位點 (Pharmacogenomics)</h4>
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    <span class="text-slate-500 block text-[10px]">CYP2D6 代謝基因型</span>
+                                    <span class="font-bold text-purple-400">*4/*4 (Poor Metabolizer)</span>
+                                </div>
+                                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    <span class="text-slate-500 block text-[10px]">CYP3A4 代謝活性</span>
+                                    <span class="font-bold text-emerald-400">Normal (Extensive)</span>
+                                </div>
+                                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    <span class="text-slate-500 block text-[10px]">UGT2B7 (Morphine代謝)</span>
+                                    <span class="font-bold text-amber-400">Wild Type (正常 glucuronidation)</span>
+                                </div>
+                                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    <span class="text-slate-500 block text-[10px]">KRAS / BRAF 基因狀態</span>
+                                    <span class="font-bold text-slate-300">KRAS G12D 突變</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Historical Treatments -->
+                        <div class="mt-5 space-y-2">
+                            <h4 class="text-xs font-bold text-slate-300">過往治療歷史與放射累積劑量</h4>
+                            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs space-y-1.5">
+                                <div class="flex justify-between text-slate-300">
+                                    <span>• T12-L2 脊柱 SBRT 立體定位放療：</span>
+                                    <span class="font-mono text-teal-400">30 Gy / 5 fractions (完成於 2026/08)</span>
+                                </div>
+                                <div class="flex justify-between text-slate-300">
+                                    <span>• 第一線全身化療 (FOLFIRINOX)：</span>
+                                    <span class="font-mono text-slate-400">累計 8 週期 (因神經毒性暫停)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- RIGHT COLUMN: PHR Home Care Data & Interactive Body Map (6 cols) -->
+                <div class="lg:col-span-6 space-y-6">
+                    
+                    <div class="bg-slate-900 rounded-xl border border-slate-800 p-5 shadow-sm">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                            <div class="flex items-center space-x-2">
+                                <div class="p-1.5 bg-emerald-600/20 text-emerald-400 rounded-lg">
+                                    <i data-lucide="home" class="w-4 h-4"></i>
+                                </div>
+                                <h3 class="font-bold text-sm text-white">PHR 在宅數據與家屬日誌 (Patient Health Record)</h3>
+                            </div>
+                            <span class="text-[11px] text-slate-400">來源：在宅護理師 APP & 家屬日誌連訊</span>
+                        </div>
+
+                        <!-- Interactive Pain Dermatome Body Map -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-xs font-bold text-slate-300">疼痛涵蓋皮節與激痛點 (Interactive Body Map)</h4>
+                                <span class="text-[10px] text-slate-400">點擊圖譜查看疼痛細節</span>
+                            </div>
+                            
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-around">
+                                <!-- Body Map SVG Representation -->
+                                <div class="relative w-44 h-56 border border-slate-800 rounded-lg bg-slate-900/50 flex items-center justify-center">
+                                    <!-- Simplified Body Outline SVG -->
+                                    <svg viewBox="0 0 100 160" class="w-full h-full text-slate-700">
+                                        <!-- Head & Body -->
+                                        <circle cx="50" cy="20" r="12" fill="none" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M 30,42 L 70,42 L 65,95 L 35,95 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+                                        <!-- Arms -->
+                                        <path d="M 28,42 L 15,80" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M 72,42 L 85,80" stroke="currentColor" stroke-width="2"/>
+                                        <!-- Legs -->
+                                        <path d="M 40,95 L 38,150" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M 60,95 L 62,150" stroke="currentColor" stroke-width="2"/>
+                                        
+                                        <!-- Interactive Pain Areas (T12 Spine & Celiac Plexus) -->
+                                        <circle cx="50" cy="65" r="9" fill="#ef4444" fill-opacity="0.6" class="animate-ping" />
+                                        <circle cx="50" cy="65" r="8" fill="#ef4444" class="cursor-pointer" onclick="showPainDetail('T12脊柱骨轉移轉移痛及神經根壓迫')" />
+                                        <circle cx="50" cy="52" r="6" fill="#f59e0b" fill-opacity="0.8" class="cursor-pointer" onclick="showPainDetail('上腹部內臟痛 (腹腔神經叢 Celiac Plexus 侵犯)')" />
+                                    </svg>
+                                    <span class="absolute bottom-1 right-2 text-[9px] text-slate-500">正面/背面疊加</span>
+                                </div>
+
+                                <!-- Pain Area Legend & Selected Info -->
+                                <div class="space-y-2 text-xs flex-1 ml-4">
+                                    <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                                        <div class="text-rose-400 font-bold flex items-center gap-1">
+                                            <span class="w-2 h-2 rounded-full bg-rose-500"></span> 區域 A：T12-L1 脊椎皮節 (Dermatome)
+                                        </div>
+                                        <p class="text-slate-400 mt-0.5 text-[11px]">痛感：神經病變痛 (灼熱感、電擊感、觸痛 Allodynia)</p>
+                                    </div>
+                                    <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                                        <div class="text-amber-400 font-bold flex items-center gap-1">
+                                            <span class="w-2 h-2 rounded-full bg-amber-500"></span> 區域 B：上腹帶狀帶痛 (Celiac Plexus)
+                                        </div>
+                                        <p class="text-slate-400 mt-0.5 text-[11px]">痛感：內臟深層鈍痛，向背部放射</p>
+                                    </div>
+                                    <div id="bodyMapDetailBox" class="p-2 rounded bg-teal-950/40 border border-teal-800/50 text-teal-300 text-[11px] hidden">
+                                        點擊區域細節：<span id="bodyMapDetailText"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Continuous PHR Rescue Morphine Consumption Trend -->
+                        <div class="mt-5 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-xs font-bold text-slate-300">近 7 日在宅突破痛 (PRN) 莫飛使用次數與痛評</h4>
+                                <span class="text-[10px] text-amber-400 font-mono">日均 PRN: 5.2 次/天</span>
+                            </div>
+                            <div class="h-40 bg-slate-950 p-2 rounded-xl border border-slate-800">
+                                <canvas id="phrPainChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Caregiver Behavioral Log -->
+                        <div class="mt-4 p-3 bg-slate-950 rounded-lg border border-slate-800 text-xs space-y-1">
+                            <span class="font-bold text-slate-300">在宅照顧者最新觀察備註 (近24小時)：</span>
+                            <p class="text-slate-400 italic">「病人昨晚因背痛加劇清醒 4 次，使用口服莫飛後約 40 分鐘才稍緩解。出現輕微譫妄與雙手抖動現象...」</p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- SECTION 2: MOCK DICOM / MRI VIEWER -->
+        <div id="content-dicom" class="tab-content hidden space-y-6">
+            <div class="bg-slate-900 rounded-xl border border-slate-800 p-5 shadow-sm">
+                
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-3 mb-4">
+                    <div>
+                        <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                            <i data-lucide="image" class="w-4 h-4 text-cyan-400"></i> DICOM 整合檢視器 (T2-Weighted Spine MRI & Abdominal CT)
+                        </h3>
+                        <p class="text-xs text-slate-400">PACS 檢查日期：2026-10-20 | 掃描部位：Thoracolumbar Spine & Upper Abdomen</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="toggleDicomAnnotation()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg border border-slate-700 flex items-center gap-1">
+                            <i data-lucide="eye" class="w-3.5 h-3.5 text-cyan-400"></i> 切換腫瘤壓迫標記
+                        </button>
+                        <span class="text-xs text-slate-500 font-mono">Series: 4/12 (Slice 18/36)</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    
+                    <!-- Interactive Viewer Canvas Area (8 cols) -->
+                    <div class="lg:col-span-8 dicom-viewport rounded-xl border border-slate-800 p-6 flex flex-col items-center justify-center min-h-[420px] relative overflow-hidden">
+                        
+                        <!-- Image Container with Annotations -->
+                        <div class="relative w-80 h-96 border border-slate-700 rounded bg-slate-950/80 flex items-center justify-center shadow-2xl">
+                            <!-- Simulated MRI Spine Graphic -->
+                            <svg viewBox="0 0 200 260" class="w-full h-full">
+                                <!-- Spine Column -->
+                                <rect x="85" y="20" width="30" height="25" rx="3" fill="#334155" stroke="#64748b" stroke-width="1"/>
+                                <rect x="85" y="50" width="30" height="25" rx="3" fill="#334155" stroke="#64748b" stroke-width="1"/>
+                                <rect x="85" y="80" width="30" height="25" rx="3" fill="#334155" stroke="#64748b" stroke-width="1"/>
+                                <!-- Collapsed T12 Vertebra with Tumor -->
+                                <rect x="83" y="110" width="34" height="18" rx="2" fill="#7f1d1d" stroke="#ef4444" stroke-width="2"/>
+                                <rect x="85" y="132" width="30" height="25" rx="3" fill="#334155" stroke="#64748b" stroke-width="1"/>
+                                <rect x="85" y="162" width="30" height="25" rx="3" fill="#334155" stroke="#64748b" stroke-width="1"/>
+                                
+                                <!-- Spinal Cord Canal -->
+                                <path d="M 120,10 L 120,240" stroke="#0284c7" stroke-width="6" stroke-dasharray="4 2"/>
+                                
+                                <!-- Dynamic Annotation Overlay -->
+                                <g id="dicomAnnotations" class="transition-opacity duration-300 opacity-100">
+                                    <!-- Tumor Arrow -->
+                                    <line x1="40" y1="119" x2="80" y2="119" stroke="#ef4444" stroke-width="2" marker-end="url(#arrow)"/>
+                                    <text x="5" y="115" fill="#fca5a5" font-size="10" font-weight="bold">T12 溶骨性轉移性破壞</text>
+                                    
+                                    <!-- Cord Compression Arrow -->
+                                    <line x1="160" y1="120" x2="124" y2="120" stroke="#f59e0b" stroke-width="2"/>
+                                    <text x="130" y="110" fill="#fde047" font-size="10" font-weight="bold">硬膜外腔受壓</text>
+                                </g>
+                            </svg>
+                        </div>
+
+                        <!-- Viewer HUD Info -->
+                        <div class="absolute bottom-3 left-4 text-[10px] text-slate-400 font-mono">
+                            WL: 450 WW: 1200 | Zoom: 100% | T2-WI Sagittal
+                        </div>
+
+                    </div>
+
+                    <!-- Radiologist Finding Summary (4 cols) -->
+                    <div class="lg:col-span-4 bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-4 text-xs">
+                        <h4 class="font-bold text-slate-200 border-b border-slate-800 pb-2 text-sm">放射科報告摘要 (PACS Official Report)</h4>
+                        
+                        <div class="space-y-3 text-slate-300">
+                            <div>
+                                <span class="font-bold text-rose-400 block">• Spine MRI (T12-L2)：</span>
+                                <p class="mt-0.5 text-slate-400 leading-relaxed">T12 椎體呈病理性塌陷，背側腫瘤組織侵入脊椎腔 (Epidural Space)，嚴重壓迫硬膜囊與脊髓，伴隨神經根包覆。</p>
+                            </div>
+                            <div>
+                                <span class="font-bold text-amber-400 block">• Abdominal CT：</span>
+                                <p class="mt-0.5 text-slate-400 leading-relaxed">胰臟尾部腫瘤顯著侵犯腹腔神經叢 (Celiac Plexus)，雙側腹膜後淋巴結腫大。</p>
+                            </div>
+                            <div class="p-3 bg-slate-900 rounded-lg border border-slate-800 text-teal-300">
+                                <span class="font-bold block text-slate-200">專科建議處置方向：</span>
+                                1. 考量神經壓迫，建議實施腹腔神經叢阻斷術 (Celiac Plexus Block) 減輕內臟痛。<br>
+                                2. 骨轉移處評估微創脊椎後突成形術 (Kyphoplasty) 或蛛網膜下腔幫浦 (ITDD)。
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <!-- SECTION 3: TITRATION CALCULATOR & INTERVENTIONAL DECISION SUITE -->
+        <div id="content-suite" class="tab-content hidden space-y-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Equianalgesic Dose Titration Calculator (7 cols) -->
+                <div class="lg:col-span-7 bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-sm space-y-5">
+                    <div class="border-b border-slate-800 pb-3 flex justify-between items-center">
+                        <div>
+                            <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                                <i data-lucide="calculator" class="w-4 h-4 text-rose-500"></i> 鴉片類藥物跨途徑等效轉換與腎功能微調計算器
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-0.5">自動根據器官功能（eGFR < 30）計算交叉耐受性扣減 (Cross-Tolerance Reduction)</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        
+                        <!-- Current Medication Input -->
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                            <h4 class="font-bold text-rose-400 border-b border-slate-800 pb-1">現行鴉片類處方 (Current Regimen)</h4>
+                            <div>
+                                <label class="block text-slate-400 mb-1">主要常規鴉片藥物</label>
+                                <select id="currDrug" onchange="calculateTitration()" class="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200">
+                                    <option value="morphine_po" selected>Oral Morphine (口服莫飛)</option>
+                                    <option value="fentanyl_patch">Transdermal Fentanyl (芬太尼貼片)</option>
+                                    <option value="oxycodone_po">Oral Oxycodone (口服奧斯康定)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 mb-1">每日常規總劑量 (mg/day 或 mcg/hr)</label>
+                                <input type="number" id="currDose" value="60" oninput="calculateTitration()" class="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 font-mono">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 mb-1">每日平均 PRN 突破痛莫飛劑量 (mg/day)</label>
+                                <input type="number" id="prnDose" value="30" oninput="calculateTitration()" class="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 font-mono">
+                            </div>
+                        </div>
+
+                        <!-- Target Medication Output & Organ Adjustment -->
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                            <h4 class="font-bold text-teal-400 border-b border-slate-800 pb-1">轉換目標藥物與腎功能扣減設定</h4>
+                            <div>
+                                <label class="block text-slate-400 mb-1">擬轉換目標藥物 (Target Drug)</label>
+                                <select id="targetDrug" onchange="calculateTitration()" class="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200">
+                                    <option value="fentanyl_patch" selected>Fentanyl Transdermal Patch (貼片)</option>
+                                    <option value="hydromorphone_sc">Hydromorphone (皮下/靜脈輸液)</option>
+                                    <option value="methadone_po">Methadone (口服美沙冬)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 mb-1">交叉耐受性扣減率 (Cross-Tolerance Reduction)</label>
+                                <select id="crossTolerance" onchange="calculateTitration()" class="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200">
+                                    <option value="0.75" selected>扣減 25% (標準不完全耐受扣減)</option>
+                                    <option value="0.5">扣減 50% (老弱或器官衰竭患者)</option>
+                                    <option value="1.0">不扣減 (100% 直轉)</option>
+                                </select>
+                            </div>
+                            <div class="p-2 bg-rose-950/30 border border-rose-800/50 rounded text-[11px] text-rose-300">
+                                系統自動鎖定：患者 eGFR 24.5 mL/min < 30，已啟動活性代謝物過濾。
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Calculated Result Box -->
+                    <div class="p-4 bg-gradient-to-r from-teal-950/60 to-slate-900 border border-teal-800/60 rounded-xl space-y-2">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-bold text-teal-300">口服莫飛總等效劑量 (OME)：</span>
+                            <span class="text-base font-bold text-white font-mono" id="omeResult">90 mg / 24小時</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs border-t border-slate-800 pt-2">
+                            <span class="font-bold text-amber-300">建議專科新處方建議劑量：</span>
+                            <span class="text-base font-bold text-amber-400 font-mono" id="targetDoseResult">Fentanyl Patch 25 mcg/hr (每72hr替換)</span>
+                        </div>
+                        <div class="text-[11px] text-slate-400 mt-1">
+                            • 建議 PRN 突破痛處方：Hydromorphone 1-2mg SC q1h PRN (考量腎衰竭不累積毒性)。
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Interventional Pain Procedure Recommender (5 cols) -->
+                <div class="lg:col-span-5 bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-sm space-y-4">
+                    <div class="border-b border-slate-800 pb-3">
+                        <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                            <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i> 微創介入性疼痛治療評估矩陣
+                        </h3>
+                        <p class="text-xs text-slate-400">專科醫師基於多模態數據之神經阻斷與幫浦評估</p>
+                    </div>
+
+                    <div class="space-y-3 text-xs">
+                        
+                        <!-- Interventional Option 1 -->
+                        <div class="p-3.5 bg-slate-950 rounded-xl border border-teal-800/60 space-y-1.5">
+                            <div class="flex justify-between font-bold text-teal-300">
+                                <span>1. 腹腔神經叢毀損術 (Celiac Plexus Neurolysis)</span>
+                                <span class="bg-teal-500/20 text-teal-400 border border-teal-500/40 text-[10px] px-2 py-0.5 rounded">高度推薦 (Grade A)</span>
+                            </div>
+                            <p class="text-slate-400 text-[11px]">適應症：胰臟癌侵犯腹腔神經叢之難治性內臟痛。研究顯示可減少 50% 以上鴉片用量。</p>
+                        </div>
+
+                        <!-- Interventional Option 2 -->
+                        <div class="p-3.5 bg-slate-950 rounded-xl border border-amber-800/60 space-y-1.5">
+                            <div class="flex justify-between font-bold text-amber-300">
+                                <span>2. 鞘內藥物輸送系統 (ITDD / 疼痛幫浦)</span>
+                                <span class="bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[10px] px-2 py-0.5 rounded">中度評估</span>
+                            </div>
+                            <p class="text-slate-400 text-[11px]">適應症：針對 T12 骨轉移頑固性軀體痛。鞘內給予 Morphine + Bupivacaine，劑量僅為口服 1/300。</p>
+                        </div>
+
+                        <!-- Interventional Option 3 -->
+                        <div class="p-3.5 bg-slate-950 rounded-xl border border-slate-800 space-y-1.5">
+                            <div class="flex justify-between font-bold text-slate-300">
+                                <span>3. 微創脊椎椎體後突成形術 (Kyphoplasty)</span>
+                                <span class="text-slate-500 text-[10px]">會診骨科/影像科</span>
+                            </div>
+                            <p class="text-slate-400 text-[11px]">適應症：灌注骨水泥穩定 T12 負重破壞，快速緩解翻身軀體移動痛。</p>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- SECTION 4: SOAP COUNTER-REPORT GENERATOR -->
+        <div id="content-soap" class="tab-content hidden space-y-6">
+            <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-sm space-y-6">
+                
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4 no-print">
+                    <div>
+                        <h3 class="font-bold text-sm text-white">疼痛專科會診回覆單 (SOAP Format) 自動產出</h3>
+                        <p class="text-xs text-slate-400">已自動擷取 EMR/PHR 多模態數據與專科藥物滴定計算結果</p>
+                    </div>
+                    <button onclick="window.print()" class="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs py-2 px-4 rounded-lg shadow flex items-center gap-1.5">
+                        <i data-lucide="printer" class="w-4 h-4"></i> 列印/匯出 PDF 報告給原醫療團隊
+                    </button>
+                </div>
+
+                <!-- Printable SOAP Form -->
+                <div class="bg-slate-950 p-6 rounded-xl border border-slate-800 text-slate-200 font-mono text-xs space-y-4 print-border" id="soapReportBody">
+                    
+                    <div class="border-b border-slate-800 pb-3 flex justify-between items-start">
+                        <div>
+                            <h2 class="text-base font-bold text-white print:text-black">癌症疼痛專科轉介會診紀錄與建議回覆單</h2>
+                            <p class="text-slate-400 text-[11px]">Pain Management Consultation Counter-Report</p>
+                        </div>
+                        <div class="text-right text-[11px] text-slate-400">
+                            <p>會診日期：2026-10-31</p>
+                            <p>會診醫師：林浩然 醫師 (疼痛科)</p>
+                        </div>
+                    </div>
+
+                    <!-- Subjective -->
+                    <div>
+                        <h4 class="font-bold text-rose-400 print:text-black uppercase">[S] Subjective 主訴與疼痛歷程</h4>
+                        <p class="mt-1 text-slate-300 print:text-black leading-relaxed">
+                            62歲胰臟癌第四期男性，主訴右後背及上腹部持續性劇痛伴隨突發性突破痛 (VAS 8-9 分)。在宅每日使用口服莫飛 60mg + PRN 30mg，仍頻繁因軀體移動痛清醒，影響夜眠與進食。在宅照顧者回報有輕微嗜睡與手抖現象。
+                        </p>
+                    </div>
+
+                    <!-- Objective -->
+                    <div>
+                        <h4 class="font-bold text-teal-400 print:text-black uppercase">[O] Objective 多模態客觀數據整合</h4>
+                        <ul class="list-disc list-inside mt-1 space-y-1 text-slate-300 print:text-black">
+                            <li><strong>EMR 腎功能警訊：</strong>eGFR 24.5 mL/min (重度腎功能衰竭)，Morphine 活性毒性代謝物 (M3G/M6G) 有蓄積引發譫妄風險。</li>
+                            <li><strong>藥物基因型：</strong>CYP2D6 *4/*4 (Poor Metabolizer)，禁忌使用 Codeine/Tramadol。</li>
+                            <li><strong>MRI 影像發現：</strong>T12 椎體病理性壓迫骨折，硬膜外腔腫瘤侵犯壓迫脊髓；腹腔神經叢 (Celiac Plexus) 受腫瘤包覆。</li>
+                            <li><strong>PHR 人體圖譜：</strong>T12 皮節顯著神經病變痛 (Allodynia) + 上腹內臟痛。</li>
+                        </ul>
+                    </div>
+
+                    <!-- Assessment -->
+                    <div>
+                        <h4 class="font-bold text-amber-400 print:text-black uppercase">[A] Assessment 專科臨床評估</h4>
+                        <p class="mt-1 text-slate-300 print:text-black leading-relaxed">
+                            1. 混合型癌症疼痛 (內臟痛 + T12 神經根壓迫痛)。<br>
+                            2. 既有口服 Morphine 因腎衰竭 (eGFR < 30) 導致蓄積毒性與疼痛控制不佳。<br>
+                            3. 具備微創腹腔神經叢毀損術 (Celiac Plexus Block) 極高適應症。
+                        </p>
+                    </div>
+
+                    <!-- Plan -->
+                    <div>
+                        <h4 class="font-bold text-emerald-400 print:text-black uppercase">[P] Plan 建議調藥處置與微創計畫</h4>
+                        <div class="mt-1 p-3 bg-slate-900 print:bg-slate-100 rounded border border-slate-800 print:border-slate-300 space-y-1 text-slate-200 print:text-black">
+                            <p><strong>1. 鴉片類藥物轉換 (Opioid Rotation)：</strong></p>
+                            <p class="pl-4">• 停止口服 Morphine。轉換為 Fentanyl Transdermal Patch 25 mcg/hr (每 72 小時替換)。</p>
+                            <p class="pl-4">• 突破痛 PRN 調整為 Hydromorphone 1mg SC q1h PRN (不經腎臟活性代謝)。</p>
+                            <p><strong>2. 輔助疼痛用藥：</strong>加開 Pregabalin (75mg HS) 緩解 T12 神經痛。</p>
+                            <p><strong>3. 介入性疼痛處置：</strong>已排定下週二安排「超音波/CT 導引腹腔神經叢神經毀損術」。</p>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Scripts -->
+    <script>
+        lucide.createIcons();
+
+        let emrChart, phrChart;
+
+        window.onload = function() {
+            initEmrLabsChart();
+            initPhrPainChart();
+        };
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-teal-600', 'text-white', 'shadow-sm', 'font-bold');
+                btn.classList.add('text-slate-400', 'font-medium');
+            });
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if(activeBtn) {
+                activeBtn.classList.add('bg-teal-600', 'text-white', 'shadow-sm', 'font-bold');
+                activeBtn.classList.remove('text-slate-400');
+            }
+
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(`content-${tabId}`).classList.remove('hidden');
+
+            if (tabId === 'emr-phr') {
+                if (emrChart) emrChart.resize();
+                if (phrChart) phrChart.resize();
+            }
+        }
+
+        // EMR Labs Chart (eGFR Trend)
+        function initEmrLabsChart() {
+            const ctx = document.getElementById('emrLabsChart').getContext('2d');
+            emrChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['5月', '6月', '7月', '8月', '9月', '10月最新'],
+                    datasets: [
+                        { label: 'eGFR (mL/min)', data: [58, 52, 45, 38, 29, 24.5], borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', fill: true, tension: 0.3 },
+                        { label: 'Creatinine (mg/dL)', data: [1.1, 1.3, 1.5, 1.8, 2.3, 2.7], borderColor: '#f59e0b', borderDash: [4, 4], tension: 0.3 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#94a3b8', font: { size: 10 } } } },
+                    scales: {
+                        x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#1e293b' } },
+                        y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#1e293b' } }
+                    }
+                }
+            });
+        }
+
+        // PHR Pain & PRN Consumption Chart
+        function initPhrPainChart() {
+            const ctx = document.getElementById('phrPainChart').getContext('2d');
+            phrChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['10/25', '10/26', '10/27', '10/28', '10/29', '10/30', '10/31'],
+                    datasets: [
+                        { type: 'line', label: '平均痛評 (VAS)', data: [6, 7, 6, 8, 7, 9, 8], borderColor: '#f43f5e', borderWidth: 2, yAxisID: 'y' },
+                        { type: 'bar', label: '莫飛 PRN 次數', data: [4, 5, 4, 6, 5, 7, 6], backgroundColor: '#0d9488', borderRadius: 4, yAxisID: 'y1' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#94a3b8', font: { size: 10 } } } },
+                    scales: {
+                        x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#1e293b' } },
+                        y: { position: 'left', min: 0, max: 10, ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#1e293b' } },
+                        y1: { position: 'right', min: 0, max: 10, ticks: { color: '#64748b', font: { size: 10 } }, grid: { drawOnChartArea: false } }
+                    }
+                }
+            });
+        }
+
+        function showPainDetail(txt) {
+            const box = document.getElementById('bodyMapDetailBox');
+            const el = document.getElementById('bodyMapDetailText');
+            el.innerText = txt;
+            box.classList.remove('hidden');
+        }
+
+        function toggleDicomAnnotation() {
+            const ann = document.getElementById('dicomAnnotations');
+            ann.classList.toggle('opacity-0');
+        }
+
+        // Equianalgesic Calculator Logic
+        function calculateTitration() {
+            const currDrug = document.getElementById('currDrug').value;
+            const currDose = parseFloat(document.getElementById('currDose').value) || 0;
+            const prnDose = parseFloat(document.getElementById('prnDose').value) || 0;
+            const targetDrug = document.getElementById('targetDrug').value;
+            const crossTol = parseFloat(document.getElementById('crossTolerance').value);
+
+            // Calculate Oral Morphine Equivalent (OME)
+            let baseOme = 0;
+            if (currDrug === 'morphine_po') baseOme = currDose;
+            else if (currDrug === 'fentanyl_patch') baseOme = currDose * 2.4; // 25mcg/hr patch ~ 60mg PO Morphine
+            else if (currDrug === 'oxycodone_po') baseOme = currDose * 1.5;
+
+            const totalOme = baseOme + prnDose;
+            const adjustedOme = totalOme * crossTol;
+
+            document.getElementById('omeResult').innerText = `${totalOme.toFixed(0)} mg / 24小時 (已折算扣減: ${adjustedOme.toFixed(0)} mg)`;
+
+            let targetText = '';
+            if (targetDrug === 'fentanyl_patch') {
+                const patchMcg = (adjustedOme / 2.4).toFixed(0);
+                targetText = `Fentanyl Patch ${patchMcg} mcg/hr (每72hr更換)`;
+            } else if (targetDrug === 'hydromorphone_sc') {
+                const hmScDose = (adjustedOme / 7.5).toFixed(1); // SC Hydromorphone ~ 7.5x oral morphine
+                targetText = `Hydromorphone Continuous SC ${hmScDose} mg / 24小時`;
+            } else if (targetDrug === 'methadone_po') {
+                const methDose = (adjustedOme / 8.0).toFixed(1);
+                targetText = `Oral Methadone ${methDose} mg / 每日 (需密切監測 QTc)`;
+            }
+
+            document.getElementById('targetDoseResult').innerText = targetText;
+        }
+
+        function generateSoapReport() {
+            switchTab('soap');
+        }
+    </script>
+</body>
+</html>

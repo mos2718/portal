@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>癌症在宅照護與社區護理線上諮詢系統</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #f8fafc;
+        }
+        .pain-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #ef4444;
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; color: black; }
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-teal-900 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-teal-600 p-2 rounded-xl text-white shadow-sm">
+                        <i data-lucide="shield-plus" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-base sm:text-lg font-bold leading-tight">在宅安養照護與社區護理協同平台</h1>
+                        <p class="text-xs text-teal-300">Home Care Plan & Community Nursing Tele-Consultation</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <a href="tel:0800888995" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold py-2 px-3 sm:px-4 rounded-lg shadow flex items-center gap-1.5 animate-pulse">
+                        <i data-lucide="phone-call" class="w-4 h-4"></i>
+                        <span>緊急安寧與社區護理專線</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Patient & Care Team Info Banner -->
+    <section class="bg-white border-b border-slate-200 shadow-sm py-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
+                
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <div class="text-slate-400 font-medium">個案資訊</div>
+                    <div class="text-sm font-bold text-slate-900 mt-0.5">陳大明 先生 (68歲)</div>
+                    <div class="text-teal-700 font-medium">照護計畫編號: CP-2026-089</div>
+                </div>
+
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <div class="text-slate-400 font-medium">主要診斷</div>
+                    <div class="text-sm font-bold text-slate-900 mt-0.5">肺腺癌第四期 (骨轉移)</div>
+                    <div class="text-slate-500">主治醫師: 張建國 醫師</div>
+                </div>
+
+                <div class="p-3 bg-teal-50 rounded-xl border border-teal-200">
+                    <div class="text-teal-900 font-medium">主責社區護理師</div>
+                    <div class="text-sm font-bold text-teal-800 mt-0.5">林靜宜 護理師 (RN)</div>
+                    <div class="text-teal-600 font-medium flex items-center gap-1 mt-0.5">
+                        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span> 線上諮詢中
+                    </div>
+                </div>
+
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <div class="text-slate-400 font-medium">最近一次 PRN 給藥</div>
+                    <div class="text-sm font-bold text-rose-700 mt-0.5" id="lastDoseDisplay">今日 10:15 (Morphine 5mg)</div>
+                    <div class="text-slate-500" id="lastDoseInterval">已間隔 4 小時 15 分鐘</div>
+                </div>
+
+                <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                    <div class="text-emerald-900 font-medium">下次實體訪視排程</div>
+                    <div class="text-sm font-bold text-emerald-800 mt-0.5">11月02日 (週一) 14:00</div>
+                    <div class="text-emerald-700">項目: Port-A 沖管與評估</div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Workspace -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+        <!-- Navigation Tabs -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-1.5 mb-6 flex flex-wrap gap-1 no-print">
+            <button onclick="switchTab('pain-eval')" id="tab-pain-eval" class="tab-btn active-tab px-4 py-2 text-xs font-semibold rounded-lg bg-teal-50 text-teal-800 border border-teal-200 flex items-center gap-1.5 transition">
+                <i data-lucide="zap" class="w-4 h-4 text-rose-500"></i> 疼痛評估與用藥資格審查
+            </button>
+            <button onclick="switchTab('tele-care')" id="tab-tele-care" class="tab-btn px-4 py-2 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-900 flex items-center gap-1.5 transition">
+                <i data-lucide="message-square" class="w-4 h-4 text-blue-500"></i> 社區護理線上諮詢
+            </button>
+            <button onclick="switchTab('visits')" id="tab-visits" class="tab-btn px-4 py-2 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-900 flex items-center gap-1.5 transition">
+                <i data-lucide="home" class="w-4 h-4 text-emerald-500"></i> 實體在宅護理排程與紀錄
+            </button>
+            <button onclick="switchTab('careplan')" id="tab-careplan" class="tab-btn px-4 py-2 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-900 flex items-center gap-1.5 transition">
+                <i data-lucide="file-check" class="w-4 h-4 text-purple-500"></i> 照護計畫與預立醫囑核對
+            </button>
+            <button onclick="switchTab('history')" id="tab-history" class="tab-btn px-4 py-2 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-900 flex items-center gap-1.5 transition">
+                <i data-lucide="history" class="w-4 h-4 text-slate-500"></i> 處置與給藥紀錄歷程
+            </button>
+        </div>
+
+        <!-- TAB 1: PAIN EVALUATION & STANDING ORDER CHECKER -->
+        <div id="content-pain-eval" class="tab-content space-y-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Pain Assessment Form (8 cols) -->
+                <div class="lg:col-span-7 bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+                    <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                                <i data-lucide="activity" class="w-5 h-5 text-rose-500"></i> 照護者即時疼痛評估與警訊檢核
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-0.5">系統將比對主治醫師預立醫囑 (Standing Orders)，提供用藥指導與諮詢 Suggestion</p>
+                        </div>
+                    </div>
+
+                    <!-- Red Flag Alert Checkers -->
+                    <div class="bg-rose-50 border border-rose-200 rounded-xl p-4">
+                        <label class="font-bold text-xs text-rose-900 block mb-2 flex items-center gap-1.5">
+                            <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-600"></i> 第一步：請先確認是否包含以下「緊急危險警訊 (Red Flags)」
+                        </label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-rose-800">
+                            <label class="flex items-center space-x-2 bg-white p-2 rounded border border-rose-100 cursor-pointer">
+                                <input type="checkbox" id="rf-resp" onchange="evaluateMedicationEligibility()" class="rounded text-rose-600 focus:ring-rose-500">
+                                <span>呼吸速率 &lt; 10 次/分 或嚴重呼吸困難</span>
+                            </label>
+                            <label class="flex items-center space-x-2 bg-white p-2 rounded border border-rose-100 cursor-pointer">
+                                <input type="checkbox" id="rf-consciousness" onchange="evaluateMedicationEligibility()" class="rounded text-rose-600 focus:ring-rose-500">
+                                <span>突然意識不清、嗜睡喚不醒</span>
+                            </label>
+                            <label class="flex items-center space-x-2 bg-white p-2 rounded border border-rose-100 cursor-pointer">
+                                <input type="checkbox" id="rf-bp" onchange="evaluateMedicationEligibility()" class="rounded text-rose-600 focus:ring-rose-500">
+                                <span>收縮壓 &lt; 90 mmHg 或冒冷汗</span>
+                            </label>
+                            <label class="flex items-center space-x-2 bg-white p-2 rounded border border-rose-100 cursor-pointer">
+                                <input type="checkbox" id="rf-neuro" onchange="evaluateMedicationEligibility()" class="rounded text-rose-600 focus:ring-rose-500">
+                                <span>雙下肢突然突發性麻木無力 (疑脊髓壓迫)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Pain Scale Slider (VAS) -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="font-bold text-xs text-slate-800 flex items-center gap-1">
+                                <span>第二步：評估目前疼痛強度 (VAS 量表 0 - 10 分)</span>
+                            </label>
+                            <span id="vasValDisplay" class="text-base font-bold text-rose-600 bg-rose-100 px-3 py-0.5 rounded-full">6 分 (中重度疼痛)</span>
+                        </div>
+                        <input type="range" min="0" max="10" value="6" id="vasSlider" oninput="onVasChange(this.value)" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer pain-thumb">
+                        <div class="flex justify-between text-[10px] text-slate-400 mt-2 font-medium">
+                            <span>0 無痛</span>
+                            <span>3 輕微疼痛</span>
+                            <span>5 中度突破痛</span>
+                            <span>8 劇烈疼痛</span>
+                            <span>10 無法忍受</span>
+                        </div>
+                    </div>
+
+                    <!-- Pain Details -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <label class="font-bold text-slate-700 block mb-1">疼痛位置</label>
+                            <select id="painLocation" onchange="evaluateMedicationEligibility()" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg">
+                                <option value="右側腰背部 (骨轉移處)" selected>右側腰背部 (已知骨轉移處)</option>
+                                <option value="胸部刺痛">胸部刺痛</option>
+                                <option value="全腹部痙攣痛">全腹部痙攣痛</option>
+                                <option value="頭部劇痛">頭部劇痛</option>
+                                <option value="其他新發生的疼痛部位">其他新發生的疼痛部位</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="font-bold text-slate-700 block mb-1">疼痛型態</label>
+                            <select id="painType" onchange="evaluateMedicationEligibility()" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg">
+                                <option value="突發突破性劇痛 (Breakthrough)" selected>突發突破性劇痛 (Breakthrough)</option>
+                                <option value="持續性鈍痛 (Dull Pain)">持續性鈍痛 (Dull Pain)</option>
+                                <option value="陣發性抽痛/電擊感 (Neuropathic)">陣發性抽痛/電擊感 (神經痛)</option>
+                                <option value="絞痛 (Cramping)">絞痛 (Cramping)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1 text-xs">照護者觀察備註</label>
+                        <input type="text" id="painNote" placeholder="例如：病人翻身時痛到翻眼、冒冷汗，不敢移動..." class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs">
+                    </div>
+
+                </div>
+
+                <!-- Automated Standing Order Decision Engine (5 cols) -->
+                <div class="lg:col-span-5 flex flex-col justify-between bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <div>
+                        <div class="border-b border-slate-100 pb-3 mb-4">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-teal-700 bg-teal-50 px-2.5 py-1 rounded">Standing Order Verification</span>
+                            <h3 class="text-sm font-bold text-slate-900 mt-1">預立醫囑自動對照與用藥判定結果</h3>
+                        </div>
+
+                        <!-- Decision Result Banner (Dynamic) -->
+                        <div id="decisionCard" class="p-5 rounded-xl border transition-all duration-300 bg-emerald-50 border-emerald-300 text-emerald-950">
+                            <div class="flex items-start space-x-3">
+                                <div id="decisionIcon" class="p-2 bg-emerald-600 text-white rounded-lg mt-0.5">
+                                    <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-emerald-800" id="decisionStatus">符合預立醫囑：可以給藥</div>
+                                    <div class="text-base font-extrabold mt-0.5" id="decisionDrug">Morphine Solution 莫飛口服液 5mg</div>
+                                    <div class="text-xs mt-2 space-y-1 text-slate-700" id="decisionReason">
+                                        <p>✓ 疼痛 VAS 分數 6 分 ≥ 4分 門檻</p>
+                                        <p>✓ 上次給藥已間隔 4小時15分（安全門檻 ≥ 1小時）</p>
+                                        <p>✓ 無危險警訊 (Red Flags)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Active Standing Orders Reference Box -->
+                        <div class="mt-4 p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-2">
+                            <div class="font-bold text-slate-800 border-b border-slate-200 pb-1 flex justify-between">
+                                <span>適用之止痛預立醫囑條款</span>
+                                <span class="text-teal-700">主治醫師：張建國</span>
+                            </div>
+                            <div class="text-slate-600">
+                                <p class="font-semibold text-slate-800">• 突破痛按需給藥 (PRN)：</p>
+                                <p class="pl-2">Morphine Solution 10mg/mL，每次 0.5mL (5mg) PO。相隔至少 1 小時，一日上限 6 次。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-6 space-y-2">
+                        <button id="administerBtn" onclick="executeMedication()" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 px-4 rounded-xl shadow transition flex items-center justify-center gap-2 text-xs">
+                            <i data-lucide="pill" class="w-4 h-4"></i>
+                            <span>執行給藥並同步紀錄 (Administer & Record)</span>
+                        </button>
+                        
+                        <button onclick="consultNurseImmediate()" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 font-bold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 text-xs">
+                            <i data-lucide="message-square" class="w-4 h-4"></i>
+                            <span>發送此評估給社區護理師 (線上諮詢)</span>
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- TAB 2: TELE-CARE COMMUNITY NURSE CONSULTATION -->
+        <div id="content-tele-care" class="tab-content hidden space-y-6">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-[550px]">
+                
+                <!-- Nurse Contact & Status (4 cols) -->
+                <div class="md:col-span-4 bg-slate-50 border-r border-slate-200 p-5 space-y-5">
+                    <div>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 rounded-full bg-teal-700 text-white flex items-center justify-center font-bold text-lg shadow">
+                                林
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-900 text-sm">林靜宜 護理師</h3>
+                                <p class="text-xs text-slate-500">台北市立社區安寧照護網</p>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 mt-1">
+                                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1 animate-pulse"></span> 值班在線中
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-white border border-slate-200 rounded-lg text-xs space-y-2">
+                        <div class="font-bold text-slate-800">社區護理提供服務內容</div>
+                        <p class="text-slate-600">• 預立醫囑用藥線上疑義解答</p>
+                        <p class="text-slate-600">• 非藥物處置指導 (姿勢擺位/冷熱敷)</p>
+                        <p class="text-slate-600">• 評估是否需排程加開實體訪視</p>
+                    </div>
+
+                    <div class="border-t border-slate-200 pt-4">
+                        <h4 class="font-bold text-xs text-slate-800 mb-2">快速照片/影像傳送評估</h4>
+                        <button onclick="triggerPhotoUpload()" class="w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-lg text-xs flex items-center justify-center gap-1.5 transition">
+                            <i data-lucide="camera" class="w-4 h-4"></i> 上傳皮膚/傷口/管路照片
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chat Messaging Interface (8 cols) -->
+                <div class="md:col-span-8 flex flex-col justify-between p-5 bg-white">
+                    <div>
+                        <div class="border-b border-slate-100 pb-3 mb-4 flex justify-between items-center">
+                            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                <i data-lucide="messages-square" class="w-4 h-4 text-teal-600"></i> 在宅照護線上諮詢與指導對話
+                            </h3>
+                            <span class="text-xs text-slate-400">通訊內容安全加密</span>
+                        </div>
+
+                        <!-- Chat Messages Container -->
+                        <div id="chatContainer" class="space-y-4 text-xs h-[360px] overflow-y-auto pr-2">
+                            
+                            <!-- Nurse Msg -->
+                            <div class="flex items-start space-x-2">
+                                <div class="w-7 h-7 rounded-full bg-teal-700 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                                    護
+                                </div>
+                                <div class="bg-slate-100 p-3 rounded-2xl rounded-tl-none max-w-[80%] text-slate-800">
+                                    <div class="font-bold text-[10px] text-teal-800 mb-1">林靜宜 護理師 • 上午 10:20</div>
+                                    您好！我是大明的社區主責護理師。早上的 Morphine 5mg 服用後，右背部的骨轉移疼痛有比較緩解嗎？
+                                </div>
+                            </div>
+
+                            <!-- Caregiver Msg -->
+                            <div class="flex items-start justify-end space-x-2">
+                                <div class="bg-teal-700 text-white p-3 rounded-2xl rounded-tr-none max-w-[80%]">
+                                    <div class="font-bold text-[10px] text-teal-200 mb-1 text-right">照護者 (家屬) • 上午 10:25</div>
+                                    早上用藥後有比較安穩休息。剛剛翻身時又痛起來，VAS 大約 6 分。我剛剛用系統核對過預立醫囑，已經間隔超過 4 小時了。
+                                </div>
+                                <div class="w-7 h-7 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                                    家
+                                </div>
+                            </div>
+
+                            <!-- Nurse Advice Card Msg -->
+                            <div class="flex items-start space-x-2">
+                                <div class="w-7 h-7 rounded-full bg-teal-700 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                                    護
+                                </div>
+                                <div class="bg-emerald-50 border border-emerald-200 p-3.5 rounded-2xl rounded-tl-none max-w-[85%] text-slate-800">
+                                    <div class="font-bold text-[10px] text-emerald-800 mb-1">林靜宜 護理師 線上指導 • 上午 10:30</div>
+                                    <p class="font-bold text-emerald-950">確認可用藥與輔助擺位處置：</p>
+                                    <ol class="list-decimal list-inside mt-1 space-y-1 text-slate-700">
+                                        <li>已核對醫囑，目前可以給予 <strong>Morphine 口服液 5mg (0.5mL)</strong>。</li>
+                                        <li>請協助病人右側翻身時，於背後墊軟枕，減少骨轉移處直接受壓。</li>
+                                        <li>服藥 30 分鐘後我會再關心疼痛下降狀況。</li>
+                                    </ol>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Chat Input -->
+                    <div class="pt-3 border-t border-slate-100">
+                        <form onsubmit="sendChatMessage(event)" class="flex gap-2">
+                            <input type="text" id="chatInput" placeholder="輸入訊息向社區護理師諮詢..." class="flex-1 p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-teal-500">
+                            <button type="submit" class="bg-teal-700 hover:bg-teal-800 text-white font-bold px-4 rounded-xl text-xs transition flex items-center gap-1">
+                                <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                                <span>發送</span>
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <!-- TAB 3: PHYSICAL HOME VISITS SCHEDULE & LOGS -->
+        <div id="content-visits" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-base">實體在宅護理訪視與處置紀錄 (Physical Visits)</h3>
+                        <p class="text-xs text-slate-500">社區護理師定期到府執行侵入性處置、照護評估與衛教</p>
+                    </div>
+                    <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full">全民健保在宅急症/安寧居家計畫照護中</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    <!-- Upcoming Visit Card -->
+                    <div class="bg-gradient-to-br from-teal-50 to-emerald-50 p-5 rounded-xl border border-teal-200">
+                        <div class="flex justify-between items-start">
+                            <span class="bg-teal-700 text-white font-bold text-[10px] px-2.5 py-0.5 rounded">下次預定到府訪視</span>
+                            <i data-lucide="calendar" class="w-5 h-5 text-teal-700"></i>
+                        </div>
+                        <div class="text-lg font-bold text-slate-900 mt-3">2026 年 11 月 02 日</div>
+                        <div class="text-xs font-semibold text-teal-800 mt-0.5">預計時間：下午 14:00 - 15:30</div>
+                        
+                        <div class="mt-4 text-xs space-y-1 text-slate-700 border-t border-teal-200/60 pt-3">
+                            <p class="font-bold text-slate-800">預定處置項目：</p>
+                            <p>1. Port-A 植入式導管 Huber 針更換與 Heparin 沖管</p>
+                            <p>2. 骶骨二級壓瘡水膠體敷料更換</p>
+                            <p>3. 評估 CADD 止痛幫浦剩餘藥量與皮下注射部位</p>
+                        </div>
+                    </div>
+
+                    <!-- Past Visit Log 1 -->
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs space-y-2">
+                        <div class="flex justify-between font-bold text-slate-800">
+                            <span>前次訪視：2026/10/26</span>
+                            <span class="text-slate-500">護理師：林靜宜</span>
+                        </div>
+                        <div class="text-slate-600">
+                            <p><span class="font-semibold text-slate-700">執行處置：</span>更換留置尿管 (Foley)、全身身體評估。</p>
+                            <p><span class="font-semibold text-slate-700">生理評估：</span>SpO2 97%, BP 115/74, 痛評 VAS 3分。</p>
+                            <p><span class="font-semibold text-slate-700">指導事項：</span>再強調突破痛服藥後需觀察 30 分鐘呼吸數。</p>
+                        </div>
+                    </div>
+
+                    <!-- Past Visit Log 2 -->
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs space-y-2">
+                        <div class="flex justify-between font-bold text-slate-800">
+                            <span>訪視：2026/10/19</span>
+                            <span class="text-slate-500">護理師：陳明珠</span>
+                        </div>
+                        <div class="text-slate-600">
+                            <p><span class="font-semibold text-slate-700">執行處置：</span>開立居家安寧照護計畫，核對預立醫囑。</p>
+                            <p><span class="font-semibold text-slate-700">環境評估：</span>交接家屬防壓瘡氣墊床使用方式與衛教。</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: CARE PLAN & STANDING ORDERS REFERENCE -->
+        <div id="content-careplan" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">主治醫師核准之在宅照護計畫與預立醫囑總覽</h3>
+                    <p class="text-xs text-slate-500">社區護理人員與照護者依此計畫執行在宅照護</p>
+                </div>
+
+                <div class="space-y-4 text-xs">
+                    
+                    <!-- Pain Management Orders -->
+                    <div class="border border-amber-200 rounded-xl overflow-hidden">
+                        <div class="bg-amber-50 px-4 py-2.5 font-bold text-amber-900 flex justify-between">
+                            <span>1. 疼痛控制預立醫囑 (Pain Control Standing Orders)</span>
+                            <span class="text-amber-700">主治醫師：張建國</span>
+                        </div>
+                        <div class="p-4 space-y-2 bg-white text-slate-700">
+                            <p><strong>• 常規止痛：</strong>Fentanyl Patch 25 mcg/hr 每 72 小時貼一片。</p>
+                            <p><strong>• 突破痛按需 (PRN)：</strong>Morphine Oral Solution (10mg/mL)，當 VAS ≥ 4分時口服 5mg (0.5mL)，相隔至少 1 小時，一日最多 6 次。</p>
+                        </div>
+                    </div>
+
+                    <!-- Non-Medication & Protocol -->
+                    <div class="border border-emerald-200 rounded-xl overflow-hidden">
+                        <div class="bg-emerald-50 px-4 py-2.5 font-bold text-emerald-900 flex justify-between">
+                            <span>2. 護理指導與非藥物處置計畫 (Nursing Care Plan)</span>
+                            <span class="text-emerald-700">社區護理團隊</span>
+                        </div>
+                        <div class="p-4 space-y-2 bg-white text-slate-700">
+                            <p><strong>• 擺位照護：</strong>每 2 小時協助翻身拍背，骨轉移受壓部位使用減壓抱枕。</p>
+                            <p><strong>• 氧氣處置：</strong>當自訴胸悶、氣喘或血氧 SpO2 &lt; 90% 時，開啟鼻導管氧氣 1-2 L/min。</p>
+                            <p><strong>• 創傷與傷口：</strong>骶骨壓瘡使用水膠體敷料，每 3 天更換。</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: HISTORY LOG -->
+        <div id="content-history" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                <h3 class="font-bold text-slate-900 text-base">給藥與處置紀錄時間軸 (History Timeline)</h3>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                                <th class="p-3">時間</th>
+                                <th class="p-3">類別</th>
+                                <th class="p-3">事件 / 處置內容</th>
+                                <th class="p-3">評估分數 (VAS)</th>
+                                <th class="p-3">社區護理師核對</th>
+                                <th class="p-3">記錄人</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody" class="divide-y divide-slate-100 text-slate-700">
+                            <!-- Filled dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white text-xs px-4 py-3 rounded-xl shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 flex items-center gap-2 z-50">
+        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+        <span id="toastMsg">通知訊息</span>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // System State
+        let lastDoseTimestamp = new Date(Date.now() - 4.25 * 3600 * 1000); // 4 hours 15 mins ago
+        let historyLogs = [
+            { time: '今日 10:15', type: '預立藥物給予', detail: 'Morphine Oral Solution 5mg PO (突破痛)', vas: '7分', nurse: '林靜宜 核對通過', by: '家屬 (照護者)' },
+            { time: '今日 08:00', type: '常規照護', detail: '翻身拍背、更換背部減壓枕', vas: '3分', nurse: '網頁常規紀錄', by: '家屬 (照護者)' },
+            { time: '昨日 22:00', type: '預立藥物給予', detail: 'Morphine Oral Solution 5mg PO (睡前疼痛)', vas: '6分', nurse: '林靜宜 核對通過', by: '家屬 (照護者)' }
+        ];
+
+        window.onload = function() {
+            updateLastDoseDisplay();
+            evaluateMedicationEligibility();
+            renderHistoryTable();
+        };
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-teal-50', 'text-teal-800', 'border-teal-200', 'font-semibold');
+                btn.classList.add('text-slate-600', 'font-medium');
+            });
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if(activeBtn) {
+                activeBtn.classList.add('bg-teal-50', 'text-teal-800', 'border-teal-200', 'font-semibold');
+                activeBtn.classList.remove('text-slate-600');
+            }
+
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(`content-${tabId}`).classList.remove('hidden');
+        }
+
+        function onVasChange(val) {
+            const display = document.getElementById('vasValDisplay');
+            let label = '輕微疼痛';
+            if (val >= 4 && val < 7) label = '中重度疼痛';
+            else if (val >= 7) label = '劇烈爆發痛';
+            else if (val == 0) label = '無痛';
+            display.innerText = `${val} 分 (${label})`;
+            evaluateMedicationEligibility();
+        }
+
+        function updateLastDoseDisplay() {
+            const now = new Date();
+            const diffMs = now - lastDoseTimestamp;
+            const diffHours = (diffMs / (1000 * 60 * 60)).toFixed(1);
+            
+            document.getElementById('lastDoseDisplay').innerText = `今日 ${lastDoseTimestamp.getHours()}:${String(lastDoseTimestamp.getMinutes()).padStart(2, '0')} (Morphine 5mg)`;
+            document.getElementById('lastDoseInterval').innerText = `已間隔 ${diffHours} 小時`;
+        }
+
+        // Standing Order Auto-Checker Algorithm
+        function evaluateMedicationEligibility() {
+            const vas = parseInt(document.getElementById('vasSlider').value);
+            const hasRedFlags = document.getElementById('rf-resp').checked || 
+                              document.getElementById('rf-consciousness').checked || 
+                              document.getElementById('rf-bp').checked || 
+                              document.getElementById('rf-neuro').checked;
+            
+            const now = new Date();
+            const hoursSinceLastDose = (now - lastDoseTimestamp) / (1000 * 60 * 60);
+
+            const card = document.getElementById('decisionCard');
+            const icon = document.getElementById('decisionIcon');
+            const status = document.getElementById('decisionStatus');
+            const drug = document.getElementById('decisionDrug');
+            const reason = document.getElementById('decisionReason');
+            const adminBtn = document.getElementById('administerBtn');
+
+            if (hasRedFlags) {
+                // RED FLAG ALERT: Emergency
+                card.className = "p-5 rounded-xl border transition-all duration-300 bg-rose-100 border-rose-400 text-rose-950";
+                icon.className = "p-2 bg-rose-600 text-white rounded-lg mt-0.5";
+                icon.innerHTML = '<i data-lucide="alert-octagon" class="w-6 h-6"></i>';
+                status.innerText = "危險警訊！禁止自主給藥，請立即聯繫社區護理師或送醫";
+                drug.innerText = "暫緩執行 PRN 莫飛口服液";
+                reason.innerHTML = "<p>❌ 偵測到呼吸次數過低、意識變差或血壓過低等危險徵兆。</p><p>👉 請立即按下頂部「緊急專線」聯繫社區護理師。</p>";
+                adminBtn.disabled = true;
+                adminBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else if (hoursSinceLastDose < 1.0) {
+                // Interval Too Short
+                card.className = "p-5 rounded-xl border transition-all duration-300 bg-amber-50 border-amber-300 text-amber-950";
+                icon.className = "p-2 bg-amber-600 text-white rounded-lg mt-0.5";
+                icon.innerHTML = '<i data-lucide="clock" class="w-6 h-6"></i>';
+                status.innerText = "未達給藥安全時間間隔：暫不可給藥";
+                drug.innerText = "請等待給藥間隔滿 1 小時";
+                reason.innerHTML = `<p>⚠️ 距離上次給藥僅 ${hoursSinceLastDose.toFixed(1)} 小時（安寧預立醫囑規定需間隔 ≥ 1 小時）。</p><p>👉 建議先執行擺位減壓、背部按摩或線上諮詢護理師。</p>`;
+                adminBtn.disabled = true;
+                adminBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else if (vas < 4) {
+                // VAS Score Too Low for PRN Morphine
+                card.className = "p-5 rounded-xl border transition-all duration-300 bg-blue-50 border-blue-300 text-blue-950";
+                icon.className = "p-2 bg-blue-600 text-white rounded-lg mt-0.5";
+                icon.innerHTML = '<i data-lucide="info" class="w-6 h-6"></i>';
+                status.innerText = "疼痛分數未達突破痛用藥門檻";
+                drug.innerText = "建議非藥物處置";
+                reason.innerHTML = "<p>ℹ️ VAS 痛評 &lt; 4 分，未達 Morphine 預立醫囑使用條件。</p><p>👉 建議使用熱敷、調整防壓瘡抱枕位置觀察即可。</p>";
+                adminBtn.disabled = true;
+                adminBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                // SAFE TO ADMINISTER
+                card.className = "p-5 rounded-xl border transition-all duration-300 bg-emerald-50 border-emerald-300 text-emerald-950";
+                icon.className = "p-2 bg-emerald-600 text-white rounded-lg mt-0.5";
+                icon.innerHTML = '<i data-lucide="check-circle-2" class="w-6 h-6"></i>';
+                status.innerText = "符合預立醫囑：可以給藥";
+                drug.innerText = "Morphine Solution 莫飛口服液 5mg (0.5mL)";
+                reason.innerHTML = `<p>✓ 疼痛 VAS 分數 ${vas} 分 ≥ 4分 門檻</p><p>✓ 已間隔 ${hoursSinceLastDose.toFixed(1)} 小時 (符合 ≥ 1小時規定)</p><p>✓ 安全檢核通過：無危險警訊 (Red Flags)</p>`;
+                adminBtn.disabled = false;
+                adminBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+            lucide.createIcons();
+        }
+
+        // Execute Medication Action
+        function executeMedication() {
+            const vas = document.getElementById('vasSlider').value;
+            lastDoseTimestamp = new Date();
+            updateLastDoseDisplay();
+            
+            // Add to history
+            const newLog = {
+                time: '剛剛 (' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + ')',
+                type: '預立藥物給予',
+                detail: 'Morphine Oral Solution 5mg PO (突破痛)',
+                vas: vas + '分',
+                nurse: '系統與預立醫囑自動對照完成',
+                by: '照護者 (家屬)'
+            };
+            historyLogs.unshift(newLog);
+            renderHistoryTable();
+
+            evaluateMedicationEligibility();
+            showToast('已完成服藥紀錄！已即時同步至社區護理師遠端儀表板。');
+        }
+
+        function consultNurseImmediate() {
+            switchTab('tele-care');
+            const vas = document.getElementById('vasSlider').value;
+            const loc = document.getElementById('painLocation').value;
+            const type = document.getElementById('painType').value;
+            
+            const autoMsg = `【自動帶入疼痛評估】痛評：${vas}分，位置：${loc}，型態：${type}。請問護理師是否建議現在給予 PRN 莫飛？`;
+            document.getElementById('chatInput').value = autoMsg;
+        }
+
+        function sendChatMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const chatContainer = document.getElementById('chatContainer');
+            
+            // Add User Msg
+            const userMsgHtml = `
+                <div class="flex items-start justify-end space-x-2">
+                    <div class="bg-teal-700 text-white p-3 rounded-2xl rounded-tr-none max-w-[80%]">
+                        <div class="font-bold text-[10px] text-teal-200 mb-1 text-right">照護者 (家屬) • 剛剛</div>
+                        ${text}
+                    </div>
+                    <div class="w-7 h-7 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">家</div>
+                </div>
+            `;
+            chatContainer.insertAdjacentHTML('beforeend', userMsgHtml);
+            input.value = '';
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            // Simulate Nurse Dynamic Response after 1.5s
+            setTimeout(() => {
+                const nurseReplyHtml = `
+                    <div class="flex items-start space-x-2">
+                        <div class="w-7 h-7 rounded-full bg-teal-700 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">護</div>
+                        <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl rounded-tl-none max-w-[80%] text-slate-800">
+                            <div class="font-bold text-[10px] text-emerald-800 mb-1">林靜宜 護理師 • 剛剛</div>
+                            已收到您的線上諮詢！根據照護計畫與醫囑，確認目前狀況可進行用藥，請於服藥 30 分鐘後再次記錄評估。若疼痛未減輕隨時與我聯繫。
+                        </div>
+                    </div>
+                `;
+                chatContainer.insertAdjacentHTML('beforeend', nurseReplyHtml);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 1200);
+        }
+
+        function triggerPhotoUpload() {
+            showToast('已啟動相機/相簿權限，上傳後護理師將於線上進行評估');
+        }
+
+        function renderHistoryTable() {
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '';
+            historyLogs.forEach(log => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-slate-800">${log.time}</td>
+                    <td class="p-3"><span class="bg-teal-100 text-teal-800 px-2 py-0.5 rounded font-medium">${log.type}</span></td>
+                    <td class="p-3 font-bold text-slate-900">${log.detail}</td>
+                    <td class="p-3 text-rose-600 font-bold">${log.vas}</td>
+                    <td class="p-3 text-emerald-700 font-medium">${log.nurse}</td>
+                    <td class="p-3 text-slate-500">${log.by}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 3500);
+        }
+    </script>
+</body>
+</html>

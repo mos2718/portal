@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>癌症病人居家治療與安養照護者系統</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js for Vitals & Weight Trend -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #f1f5f9;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; color: black; }
+        }
+        .pain-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #ef4444;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header / Navigation -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-teal-600 p-2 rounded-xl text-white shadow-sm">
+                        <i data-lucide="heart-pulse" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-base sm:text-lg font-bold leading-tight">在宅癌症安養與化療照護系統</h1>
+                        <p class="text-xs text-teal-300">Home Cancer Caregiver Tracking System</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="openModal('quickLogModal')" class="bg-teal-600 hover:bg-teal-500 text-white text-xs font-semibold py-2 px-3 sm:px-4 rounded-lg shadow transition flex items-center gap-1.5">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        <span>新增今日紀錄</span>
+                    </button>
+                    <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs py-2 px-3 rounded-lg transition flex items-center gap-1">
+                        <i data-lucide="printer" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">列印摘要</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Patient Header Card -->
+    <section class="bg-white border-b border-slate-200 shadow-sm py-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
+                
+                <div class="col-span-2 md:col-span-1 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <div class="text-slate-400 font-medium">個案資訊</div>
+                    <div class="text-sm font-bold text-slate-900 mt-0.5">林美華 女士 (65歲)</div>
+                    <div class="text-slate-500">病歷號: C-8893021</div>
+                </div>
+
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <div class="text-slate-400 font-medium">癌病診斷</div>
+                    <div class="text-sm font-bold text-slate-900 mt-0.5">大腸直腸癌 (Stage III)</div>
+                    <div class="text-emerald-700 font-medium">現行計畫：mFOLFOX6</div>
+                </div>
+
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <div class="text-slate-400 font-medium">化療週期</div>
+                    <div class="text-sm font-bold text-teal-700 mt-0.5">第 4 週期 / 共 8 次</div>
+                    <div class="text-slate-500">上次給藥: 3天前</div>
+                </div>
+
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <div class="text-slate-400 font-medium">主治醫師</div>
+                    <div class="text-sm font-bold text-slate-900 mt-0.5">王大衛 醫師</div>
+                    <div class="text-slate-500">血液腫瘤科 (門診: 週四)</div>
+                </div>
+
+                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200">
+                    <div class="text-amber-800 font-medium flex items-center justify-between">
+                        <span>體重下降警示</span>
+                        <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-600"></i>
+                    </div>
+                    <div class="text-sm font-bold text-amber-900 mt-0.5">近1週 -2.4 kg (-4.3%)</div>
+                    <div class="text-amber-700">需特別注意食慾與高蛋白質補充</div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Workspace -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+        <!-- Navigation Tabs -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-1.5 mb-6 flex flex-wrap gap-1 no-print">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn active-tab px-4 py-2 text-xs font-semibold rounded-lg bg-teal-50 text-teal-800 border border-teal-200 flex items-center gap-1.5 transition">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i> 今日儀表板
+            </button>
+            <button onclick="switchTab('vitals')" id="tab-vitals" class="tab-btn px-4 py-2 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-900 flex items-center gap-1.5 transition">
+                <i data-lucide="activity" class="w-4 h-4"></i> 生理與體重監測
+            </button>
+            <button onclick="switchTab('meds')" id="tab-meds" class="tab-btn px-4 py-2 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-900 flex items-center gap-1.5 transition">
+                <i data-lucide="pill" class="w-4 h-4"></i> 化療與給藥紀錄
+            </button>
+            <button onclick="switchTab('symptoms')" id="tab-symptoms" class="tab-btn px-4 py-2 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-900 flex items-center gap-1.5 transition">
+                <i data-lucide="stethoscope" class="w-4 h-4"></i> 症狀與副作用評估
+            </button>
+            <button onclick="switchTab('report')" id="tab-report" class="tab-btn px-4 py-2 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-900 flex items-center gap-1.5 transition">
+                <i data-lucide="file-text" class="w-4 h-4"></i> 回診與醫師溝通摘要
+            </button>
+        </div>
+
+        <!-- TAB CONTENT 1: DASHBOARD -->
+        <div id="content-dashboard" class="tab-content space-y-6">
+            
+            <!-- Quick Vitals Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <div class="text-xs text-slate-500 font-medium">最新體溫</div>
+                        <div class="text-2xl font-bold text-slate-800 mt-1">37.2 <span class="text-xs font-normal text-slate-500">°C</span></div>
+                        <div class="text-[10px] text-emerald-600 font-medium mt-1">✓ 正常無發燒 (門檻: 38.0°C)</div>
+                    </div>
+                    <div class="p-3 bg-teal-50 text-teal-600 rounded-xl">
+                        <i data-lucide="thermometer" class="w-6 h-6"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <div class="text-xs text-slate-500 font-medium">血壓 / 心跳</div>
+                        <div class="text-2xl font-bold text-slate-800 mt-1">118/76 <span class="text-xs font-normal text-slate-500">mmHg</span></div>
+                        <div class="text-[10px] text-slate-500 mt-1">心跳: 78 bpm</div>
+                    </div>
+                    <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                        <i data-lucide="heart" class="w-6 h-6"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <div class="text-xs text-slate-500 font-medium">今日最新體重</div>
+                        <div class="text-2xl font-bold text-slate-800 mt-1">53.2 <span class="text-xs font-normal text-slate-500">kg</span></div>
+                        <div class="text-[10px] text-rose-600 font-medium mt-1">↓ 較上週同期減少 2.4kg</div>
+                    </div>
+                    <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                        <i data-lucide="scale" class="w-6 h-6"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <div class="text-xs text-slate-500 font-medium">疼痛評估 (VAS)</div>
+                        <div class="text-2xl font-bold text-amber-600 mt-1">3 <span class="text-xs font-normal text-slate-500">/ 10 分</span></div>
+                        <div class="text-[10px] text-slate-500 mt-1">輕度鈍痛 (腰背部)</div>
+                    </div>
+                    <div class="p-3 bg-rose-50 text-rose-600 rounded-xl">
+                        <i data-lucide="zap" class="w-6 h-6"></i>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Vitals Chart Preview -->
+                <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                            <i data-lucide="trending-down" class="w-4 h-4 text-teal-600"></i> 近二週體重與體溫監測趨勢
+                        </h3>
+                        <span class="text-xs text-slate-500">體重急降需通報營養師</span>
+                    </div>
+                    <div class="h-64">
+                        <canvas id="dashVitalsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Today's Medication Checklist -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                <i data-lucide="check-square" class="w-4 h-4 text-teal-600"></i> 今日服藥計畫
+                            </h3>
+                            <span class="text-xs bg-teal-100 text-teal-800 font-semibold px-2 py-0.5 rounded-full" id="medProgressTag">完成 2/4</span>
+                        </div>
+                        
+                        <div class="space-y-2 text-xs" id="dashMedList">
+                            <div class="p-2.5 rounded-lg border border-slate-100 bg-slate-50 flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <input type="checkbox" checked onchange="toggleMed(this)" class="rounded text-teal-600 border-slate-300">
+                                    <span class="line-through text-slate-400">Capecitabine (口服化療 1000mg) - 早</span>
+                                </div>
+                                <span class="text-slate-400">08:00</span>
+                            </div>
+                            <div class="p-2.5 rounded-lg border border-slate-100 bg-slate-50 flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <input type="checkbox" checked onchange="toggleMed(this)" class="rounded text-teal-600 border-slate-300">
+                                    <span class="line-through text-slate-400">Ondansetron (止吐 8mg) - 午</span>
+                                </div>
+                                <span class="text-slate-400">12:30</span>
+                            </div>
+                            <div class="p-2.5 rounded-lg border border-teal-100 bg-teal-50/40 flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <input type="checkbox" onchange="toggleMed(this)" class="rounded text-teal-600 border-slate-300">
+                                    <span class="font-semibold text-slate-800">Capecitabine (口服化療 1000mg) - 晚</span>
+                                </div>
+                                <span class="text-teal-700 font-medium">18:00</span>
+                            </div>
+                            <div class="p-2.5 rounded-lg border border-slate-100 bg-slate-50 flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <input type="checkbox" onchange="toggleMed(this)" class="rounded text-teal-600 border-slate-300">
+                                    <span class="font-medium text-slate-700">Sennoside (軟便劑 20mg) - 睡前</span>
+                                </div>
+                                <span class="text-slate-500">21:00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span class="text-slate-500">突破痛止痛藥 (Morphine 5mg)</span>
+                        <button onclick="recordPRN()" class="text-rose-600 hover:text-rose-800 font-bold">＋ 登記按需服用 (PRN)</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Symptom Summary Cards -->
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                <h3 class="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
+                    <i data-lucide="activity" class="w-4 h-4 text-teal-600"></i> 近期症狀與化療副作用觀察
+                </h3>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
+                    <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                        <div class="text-slate-500">每餐進食量</div>
+                        <div class="font-bold text-amber-700 mt-1">平均約 50% (半碗)</div>
+                        <div class="text-slate-400 mt-0.5">主訴口腔黏膜破皮</div>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                        <div class="text-slate-500">噁心與嘔吐</div>
+                        <div class="font-bold text-slate-800 mt-1">G1 輕微噁心</div>
+                        <div class="text-slate-400 mt-0.5">無實際嘔吐</div>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                        <div class="text-slate-500">神經毒性 (手腳麻)</div>
+                        <div class="font-bold text-amber-700 mt-1">G2 中度麻木</div>
+                        <div class="text-slate-400 mt-0.5">扣鈕扣稍有困難</div>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                        <div class="text-slate-500">疲憊指數</div>
+                        <div class="font-bold text-slate-800 mt-1">6 / 10 分</div>
+                        <div class="text-slate-400 mt-0.5">午後需臥床休息</div>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                        <div class="text-slate-500">排便狀況</div>
+                        <div class="font-bold text-emerald-700 mt-1">成形軟便 1次/日</div>
+                        <div class="text-slate-400 mt-0.5">無腹瀉或嚴重便秘</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TAB CONTENT 2: VITALS & WEIGHT TRACKER -->
+        <div id="content-vitals" class="tab-content hidden space-y-6">
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base">生理數據與體重紀錄歷史</h3>
+                        <p class="text-xs text-slate-500">每日定時（建議晨起空腹）量測體重與血壓</p>
+                    </div>
+                    <button onclick="openModal('quickLogModal')" class="bg-teal-600 text-white text-xs font-medium px-3 py-2 rounded-lg flex items-center gap-1">
+                        <i data-lucide="plus" class="w-4 h-4"></i> 紀錄今日生理數據
+                    </button>
+                </div>
+
+                <!-- Big Chart -->
+                <div class="h-72 mb-6">
+                    <canvas id="vitalsFullChart"></canvas>
+                </div>
+
+                <!-- History Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                                <th class="p-3">日期時間</th>
+                                <th class="p-3">體重 (kg)</th>
+                                <th class="p-3">體溫 (°C)</th>
+                                <th class="p-3">血壓 (mmHg)</th>
+                                <th class="p-3">心跳 (bpm)</th>
+                                <th class="p-3">血氧 SpO2 (%)</th>
+                                <th class="p-3">照顧者備註</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vitalsTableBody" class="divide-y divide-slate-100">
+                            <!-- Filled dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB CONTENT 3: MEDICATION TRACKER -->
+        <div id="content-meds" class="tab-content hidden space-y-6">
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base">口服化療與常規藥物清單</h3>
+                        <p class="text-xs text-slate-500">嚴格依醫囑時間服藥，不可自行增減劑量</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <!-- Chemotherapy & Target Meds -->
+                    <div class="border border-teal-200 bg-teal-50/20 p-4 rounded-xl">
+                        <h4 class="font-bold text-teal-900 text-sm mb-3 flex items-center gap-1.5">
+                            <i data-lucide="shield" class="w-4 h-4 text-teal-600"></i> 口服化療 / 標靶藥物
+                        </h4>
+                        <div class="space-y-3 text-xs">
+                            <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                                <div class="flex justify-between font-bold text-slate-800">
+                                    <span>Capecitabine (截痛捷錠) 500mg</span>
+                                    <span class="text-teal-700">2錠/次 (1000mg)</span>
+                                </div>
+                                <div class="text-slate-500 mt-1">用法：每日二次，早晚餐後30分鐘內服用</div>
+                                <div class="text-slate-400 mt-0.5">化療週期：連服14天，停藥7天 (第4週期中)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Symptom & Regular Meds -->
+                    <div class="border border-slate-200 bg-slate-50 p-4 rounded-xl">
+                        <h4 class="font-bold text-slate-800 text-sm mb-3 flex items-center gap-1.5">
+                            <i data-lucide="pill" class="w-4 h-4 text-blue-600"></i> 症狀控制與常規藥物
+                        </h4>
+                        <div class="space-y-3 text-xs">
+                            <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                                <div class="flex justify-between font-bold text-slate-800">
+                                    <span>Ondansetron (昂丹司瓊止吐錠) 8mg</span>
+                                    <span class="text-blue-700">1錠/次</span>
+                                </div>
+                                <div class="text-slate-500 mt-1">用法：化療期間早晚定時服，或嘔吐前30分服</div>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                                <div class="flex justify-between font-bold text-slate-800">
+                                    <span>Morphine Immediate Release (速效莫飛) 10mg</span>
+                                    <span class="text-rose-700">PRN 突破痛用</span>
+                                </div>
+                                <div class="text-slate-500 mt-1">用法：VAS ≥ 4分時口服半錠至1錠，間隔 > 1小時</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB CONTENT 4: SYMPTOM ASSESSMENT -->
+        <div id="content-symptoms" class="tab-content hidden space-y-6">
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                <h3 class="font-bold text-slate-800 text-base mb-1">今日癌病與化療副作用詳細評估</h3>
+                <p class="text-xs text-slate-500 mb-6">定期紀錄有助主治醫師調整化療劑量與症狀用藥</p>
+
+                <form id="symptomForm" onsubmit="saveSymptomAssessment(event)" class="space-y-6 text-xs">
+                    
+                    <!-- Pain VAS Scale -->
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="font-bold text-slate-800 flex items-center gap-1.5">
+                                <i data-lucide="zap" class="w-4 h-4 text-rose-500"></i> 疼痛程度評估 (VAS 0 - 10分)
+                            </label>
+                            <span id="painVal" class="text-base font-bold text-rose-600">3 分 (輕度)</span>
+                        </div>
+                        <input type="range" min="0" max="10" value="3" id="painSlider" oninput="updatePainLabel(this.value)" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer pain-slider">
+                        <div class="flex justify-between text-[10px] text-slate-400 mt-1 font-medium">
+                            <span>0 無痛</span>
+                            <span>3 輕微鈍痛</span>
+                            <span>5 中度影響睡眠</span>
+                            <span>8 劇烈疼痛</span>
+                            <span>10 無法忍受</span>
+                        </div>
+                    </div>
+
+                    <!-- Appetite & Nutrition -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                            <label class="font-bold text-slate-800 mb-2 block">每餐進食量 (食慾評估)</label>
+                            <select id="appetiteSelect" class="w-full p-2 bg-white border border-slate-300 rounded-lg">
+                                <option value="100%">100% (整碗正常完食)</option>
+                                <option value="75%">75% (能吃四分之三)</option>
+                                <option value="50%" selected>50% (僅能吃半碗)</option>
+                                <option value="25%">25% (僅吃幾口/流質)</option>
+                                <option value="0%">0% (完全無法進食/噁心)</option>
+                            </select>
+                        </div>
+
+                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                            <label class="font-bold text-slate-800 mb-2 block">噁心嘔吐分級 (CTCAE)</label>
+                            <select id="nauseaSelect" class="w-full p-2 bg-white border border-slate-300 rounded-lg">
+                                <option value="Grade 0">Grade 0: 無噁心感</option>
+                                <option value="Grade 1" selected>Grade 1: 輕微噁心，不影響進食</option>
+                                <option value="Grade 2">Grade 2: 噁心致進食減少，無明顯嘔吐</option>
+                                <option value="Grade 3">Grade 3: 嚴重嘔吐 (一日 >5次)，無法進食</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Neuropathy & Fatigue -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                            <label class="font-bold text-slate-800 mb-2 block">末梢神經毒性 (手腳麻木感)</label>
+                            <select id="neuroSelect" class="w-full p-2 bg-white border border-slate-300 rounded-lg">
+                                <option value="無症狀">無麻木感覺</option>
+                                <option value="輕微麻木">輕微麻木 (不影響日常生活)</option>
+                                <option value="中度麻木" selected>中度麻木 (扣鈕扣、拿筷子稍影響)</option>
+                                <option value="嚴重麻木">嚴重麻木/疼痛 (行走困難)</option>
+                            </select>
+                        </div>
+
+                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                            <label class="font-bold text-slate-800 mb-2 block">口腔黏膜破皮 / 潰瘍</label>
+                            <select id="mucositisSelect" class="w-full p-2 bg-white border border-slate-300 rounded-lg">
+                                <option value="無">無潰瘍</option>
+                                <option value="輕微破皮" selected>輕微紅腫/1-2處小破皮 (可進軟食)</option>
+                                <option value="嚴重疼痛潰瘍">多處痛性潰瘍 (僅能吞嚥流質)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <label class="font-bold text-slate-800 mb-2 block">今日情緒與精神狀態紀錄</label>
+                        <textarea id="symptomNotes" rows="3" placeholder="例如：今日午後稍微焦慮，經陪同散步後改善..." class="w-full p-2.5 bg-white border border-slate-300 rounded-lg"></textarea>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 px-6 rounded-lg transition shadow">
+                            儲存今日症狀評估
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+
+        <!-- TAB CONTENT 5: PHYSICIAN REPORT EXPORT -->
+        <div id="content-report" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm" id="printableReport">
+                
+                <!-- Report Header -->
+                <div class="border-b border-slate-300 pb-4 mb-4 flex justify-between items-start">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">癌症在宅養護 - 門診回診摘要溝通報告</h2>
+                        <p class="text-xs text-slate-500">產出時間：2026-10-31 • 照護者記錄彙整</p>
+                    </div>
+                    <div class="text-right text-xs">
+                        <div class="font-bold text-slate-800">個案：林美華 (65歲)</div>
+                        <div class="text-slate-500">診斷：大腸直腸癌 Stage III (化療週期 4/8)</div>
+                    </div>
+                </div>
+
+                <!-- Report Body -->
+                <div class="space-y-4 text-xs">
+                    
+                    <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                        <h4 class="font-bold text-amber-900 mb-1 flex items-center gap-1">
+                            <i data-lucide="alert-circle" class="w-4 h-4"></i> 回診重點關注項目 (Physician Alert)
+                        </h4>
+                        <ul class="list-disc list-inside space-y-0.5 text-amber-800">
+                            <li>近 14 天體重從 55.6 kg 下降至 53.2 kg (降幅 4.3%)，伴隨口服進食量下降至 50%。</li>
+                            <li>手腳末梢麻木感 (G2) 增加，扣鈕扣受阻，建議評估是否調整 Oxaliplatin 劑量。</li>
+                            <li>疼痛控制大致良好 (VAS 2-3分)，本週僅使用過 1 次 PRN 莫飛。</li>
+                        </ul>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="border border-slate-200 p-3 rounded-lg">
+                            <h5 class="font-bold text-slate-800 border-b pb-1 mb-2">生理數據摘要 (近7日平均)</h5>
+                            <p>• 平均體溫：36.8 °C (無發燒紀錄)</p>
+                            <p>• 平均血壓：116 / 75 mmHg</p>
+                            <p>• 最新體重：53.2 kg (一週前: 55.6 kg)</p>
+                        </div>
+                        <div class="border border-slate-200 p-3 rounded-lg">
+                            <h5 class="font-bold text-slate-800 border-b pb-1 mb-2">主要副作用觀察</h5>
+                            <p>• 噁心/嘔吐：Grade 1 (無劇烈嘔吐)</p>
+                            <p>• 口腔黏膜：輕微紅腫，偶有刺痛</p>
+                            <p>• 排便紀錄：成形軟便，無腹瀉</p>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-200 p-3 rounded-lg">
+                        <h5 class="font-bold text-slate-800 border-b pb-1 mb-2">照顧者想詢問主治醫師的問題</h5>
+                        <p class="text-slate-700 italic">1. 病人食慾差，是否建議開立促進食慾藥物 (如 Megestrol) 或補充高熱量營養奶？</p>
+                        <p class="text-slate-700 italic">2. 手麻影響細微動作，下次化療是否需要調整劑量？</p>
+                    </div>
+
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3 no-print">
+                    <button onclick="window.print()" class="bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold py-2 px-4 rounded-lg flex items-center gap-1.5 shadow">
+                        <i data-lucide="printer" class="w-4 h-4"></i> 列印此報告給醫師
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Quick Log Modal -->
+    <div id="quickLogModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div class="bg-slate-900 text-white px-4 py-3 flex justify-between items-center">
+                <h3 class="font-bold text-sm flex items-center gap-1.5">
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-teal-400"></i> 新增今日生理與體重數據
+                </h3>
+                <button onclick="closeModal('quickLogModal')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form onsubmit="saveQuickLog(event)" class="p-4 space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-700 font-medium mb-1">體重 (kg)</label>
+                    <input type="number" step="0.1" required id="inputWeight" placeholder="例如: 53.2" class="w-full p-2 border border-slate-300 rounded-lg">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-slate-700 font-medium mb-1">體溫 (°C)</label>
+                        <input type="number" step="0.1" required id="inputTemp" placeholder="例如: 36.8" class="w-full p-2 border border-slate-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-slate-700 font-medium mb-1">血氧 SpO2 (%)</label>
+                        <input type="number" required id="inputSpo2" value="98" class="w-full p-2 border border-slate-300 rounded-lg">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-slate-700 font-medium mb-1">收縮壓 (High)</label>
+                        <input type="number" id="inputSys" placeholder="118" class="w-full p-2 border border-slate-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-slate-700 font-medium mb-1">舒張壓 (Low)</label>
+                        <input type="number" id="inputDia" placeholder="76" class="w-full p-2 border border-slate-300 rounded-lg">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-slate-700 font-medium mb-1">照顧者備註</label>
+                    <input type="text" id="inputNote" placeholder="例如: 晨起精神佳" class="w-full p-2 border border-slate-300 rounded-lg">
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('quickLogModal')" class="px-3 py-1.5 text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+                    <button type="submit" class="px-4 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg shadow">儲存紀錄</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        lucide.createIcons();
+
+        // Sample Data
+        let vitalsHistory = [
+            { date: '10/25', weight: 55.6, temp: 36.6, bp: '115/72', spo2: 98, note: '化療後第1天' },
+            { date: '10/26', weight: 55.1, temp: 36.8, bp: '118/75', spo2: 98, note: '輕微噁心' },
+            { date: '10/27', weight: 54.8, temp: 37.0, bp: '120/78', spo2: 97, note: '食慾稍差' },
+            { date: '10/28', weight: 54.2, temp: 36.7, bp: '116/74', spo2: 99, note: '胃口恢復3成' },
+            { date: '10/29', weight: 53.8, temp: 37.1, bp: '119/76', spo2: 98, note: '手麻感增加' },
+            { date: '10/30', weight: 53.5, temp: 36.9, bp: '117/75', spo2: 98, note: '精神平穩' },
+            { date: '10/31', weight: 53.2, temp: 37.2, bp: '118/76', spo2: 98, note: '今日晨起空腹' }
+        ];
+
+        let dashChart, fullChart;
+
+        // Initialize Charts
+        window.onload = function() {
+            renderVitalsTable();
+            initCharts();
+        };
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-teal-50', 'text-teal-800', 'border-teal-200');
+                btn.classList.add('text-slate-600');
+            });
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if(activeBtn) {
+                activeBtn.classList.add('bg-teal-50', 'text-teal-800', 'border-teal-200');
+            }
+
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+            document.getElementById(`content-${tabId}`).classList.remove('hidden');
+
+            if (tabId === 'vitals' && fullChart) {
+                fullChart.resize();
+            }
+        }
+
+        function updatePainLabel(val) {
+            const label = document.getElementById('painVal');
+            let desc = '無痛';
+            if (val > 0 && val <= 3) desc = '輕度鈍痛';
+            else if (val > 3 && val <= 6) desc = '中度疼痛';
+            else if (val > 6 && val <= 8) desc = '重度劇痛';
+            else if (val > 8) desc = '無法忍受';
+            label.innerText = `${val} 分 (${desc})`;
+        }
+
+        function initCharts() {
+            const labels = vitalsHistory.map(d => d.date);
+            const weights = vitalsHistory.map(d => d.weight);
+            const temps = vitalsHistory.map(d => d.temp);
+
+            // Dashboard Small Chart
+            const ctx1 = document.getElementById('dashVitalsChart').getContext('2d');
+            dashChart = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: '體重 (kg)', data: weights, borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', yAxisID: 'y' },
+                        { label: '體溫 (°C)', data: temps, borderColor: '#0d9488', backgroundColor: 'transparent', yAxisID: 'y1', borderDash: [4, 4] }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { type: 'linear', position: 'left', title: { display: true, text: '體重 (kg)' } },
+                        y1: { type: 'linear', position: 'right', min: 35.5, max: 39, title: { display: true, text: '體溫 (°C)' }, grid: { drawOnChartArea: false } }
+                    }
+                }
+            });
+
+            // Full Vitals Chart
+            const ctx2 = document.getElementById('vitalsFullChart').getContext('2d');
+            fullChart = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: '體重 (kg)', data: weights, borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.15)', fill: true, tension: 0.3 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { title: { display: true, text: '體重 (kg)' } }
+                    }
+                }
+            });
+        }
+
+        function renderVitalsTable() {
+            const tbody = document.getElementById('vitalsTableBody');
+            tbody.innerHTML = '';
+            vitalsHistory.slice().reverse().forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-slate-800">${item.date}</td>
+                    <td class="p-3 font-bold text-amber-700">${item.weight} kg</td>
+                    <td class="p-3 text-slate-700">${item.temp} °C</td>
+                    <td class="p-3 text-slate-700">${item.bp}</td>
+                    <td class="p-3 text-slate-700">78</td>
+                    <td class="p-3 text-emerald-700">${item.spo2}%</td>
+                    <td class="p-3 text-slate-500">${item.note}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function saveQuickLog(e) {
+            e.preventDefault();
+            const w = parseFloat(document.getElementById('inputWeight').value);
+            const t = parseFloat(document.getElementById('inputTemp').value);
+            const spo2 = document.getElementById('inputSpo2').value;
+            const sys = document.getElementById('inputSys').value || '118';
+            const dia = document.getElementById('inputDia').value || '76';
+            const note = document.getElementById('inputNote').value || '照顧者新增';
+
+            const newItem = {
+                date: '今日',
+                weight: w,
+                temp: t,
+                bp: `${sys}/${dia}`,
+                spo2: spo2,
+                note: note
+            };
+
+            vitalsHistory.push(newItem);
+            renderVitalsTable();
+            closeModal('quickLogModal');
+            alert('成功儲存今日生理數據紀錄！');
+        }
+
+        function toggleMed(cb) {
+            const parent = cb.closest('div');
+            const label = parent.querySelector('span');
+            if (cb.checked) {
+                label.classList.add('line-through', 'text-slate-400');
+                label.classList.remove('font-semibold', 'text-slate-800');
+            } else {
+                label.classList.remove('line-through', 'text-slate-400');
+                label.classList.add('font-semibold', 'text-slate-800');
+            }
+        }
+
+        function recordPRN() {
+            alert('已成功紀錄一筆 PRN 止痛藥服藥登記 (莫飛 5mg)');
+        }
+
+        function saveSymptomAssessment(e) {
+            e.preventDefault();
+            alert('已成功更新今日症狀與副作用評估！已自動整合至門診摘要報告。');
+            switchTab('report');
+        }
+    </script>
+</body>
+</html>
